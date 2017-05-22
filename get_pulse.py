@@ -1,3 +1,6 @@
+from PyQt5.QtCore import QRegExp, QCoreApplication
+from PyQt5.QtGui import QRegExpValidator
+
 from lib.device import Camera
 from lib.processors_noopenmdao import findFaceGetPulse
 from lib.interface import plotXY, imshow, waitKey, destroyWindow
@@ -8,9 +11,20 @@ import datetime
 from serial import Serial
 import socket
 import sys
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+
+def window():
+    app = QtWidgets.QApplication(sys.argv)
+    Form = QtWidgets.QWidget()
+    ui = Ui_Form()
+    ui.setupUi(Form)
+    Form.setFixedSize(Form.size())
+    Form.show()
+    sys.exit(app.exec_())
+
 
 class getPulseApp(object):
-
     """
     Python application that finds a face in a webcam stream, then isolates the
     forehead.
@@ -44,8 +58,8 @@ class getPulseApp(object):
                 ip, port = udp.split(":")
                 port = int(port)
             self.udp = (ip, port)
-            self.sock = socket.socket(socket.AF_INET, # Internet
-                 socket.SOCK_DGRAM) # UDP
+            self.sock = socket.socket(socket.AF_INET,  # Internet
+                                      socket.SOCK_DGRAM)  # UDP
 
         self.cameras = []
         self.selected_cam = 0
@@ -75,7 +89,7 @@ class getPulseApp(object):
         self.plot_title = "Data display - raw signal (top) and PSD (bottom)"
 
         # Maps keystrokes to specified methods
-        #(A GUI window must have focus for these to work)
+        # (A GUI window must have focus for these to work)
         self.key_controls = {"s": self.toggle_search,
                              "d": self.toggle_display_plot,
                              "c": self.toggle_cam,
@@ -106,7 +120,7 @@ class getPulseApp(object):
         Locking the forehead location in place significantly improves
         data quality, once a forehead has been sucessfully isolated.
         """
-        #state = self.processor.find_faces.toggle()
+        # state = self.processor.find_faces.toggle()
         state = self.processor.find_faces_toggle()
         print "face detection lock =", not state
 
@@ -197,16 +211,181 @@ class getPulseApp(object):
         # handle any key presses
         self.key_handler()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Webcam pulse detector.')
-    parser.add_argument('--serial', default=None,
-                        help='serial port destination for bpm data')
-    parser.add_argument('--baud', default=None,
-                        help='Baud rate for serial transmission')
-    parser.add_argument('--udp', default=None,
-                        help='udp address:port destination for bpm data')
 
-    args = parser.parse_args()
-    App = getPulseApp(args)
-    while True:
-        App.main_loop()
+class Ui_Form(object):
+    def setupUi(self, Form):
+        Form.setObjectName("Form")
+        Form.resize(485, 364)
+        Form.setStyleSheet("QWidget{\n"
+                           "    background-color: #ffffff;\n"
+                           "}")
+
+        self.errorColor = '#f6989d'
+        self.color = '#ffffff'
+
+        self.isNameValid = False
+        self.isSurnameValid = False
+        self.isJmbagValid = False
+        self.isRecordNumValid = True  # minimal default value is set
+        self.isRecordLengthValid = False
+        self.name = QtWidgets.QLineEdit(Form)
+        self.name.setGeometry(QtCore.QRect(180, 50, 181, 21))
+        self.name.setText("")
+        self.name.setObjectName("name")
+        self.name_label = QtWidgets.QLabel(Form)
+        self.name_label.setGeometry(QtCore.QRect(110, 50, 60, 16))
+        self.name_label.setObjectName("name_label")
+        self.surname = QtWidgets.QLineEdit(Form)
+        self.surname.setGeometry(QtCore.QRect(180, 90, 181, 21))
+        self.surname.setText("")
+        self.surname.setObjectName("surname")
+        self.surname_label = QtWidgets.QLabel(Form)
+        self.surname_label.setGeometry(QtCore.QRect(110, 90, 60, 16))
+        self.surname_label.setObjectName("surname_label")
+        self.jmbag = QtWidgets.QLineEdit(Form)
+        self.jmbag.setGeometry(QtCore.QRect(180, 130, 181, 21))
+        self.jmbag.setText("")
+        self.jmbag.setObjectName("jmbag")
+        self.jmbag.setMaxLength(10)
+        self.jmbag_label = QtWidgets.QLabel(Form)
+        self.jmbag_label.setGeometry(QtCore.QRect(110, 130, 60, 16))
+        self.jmbag_label.setObjectName("jmbag_label")
+        self.record_num = QtWidgets.QLineEdit(Form)
+        self.record_num.setGeometry(QtCore.QRect(230, 170, 131, 21))
+        self.record_num.setText("10")
+        self.record_num.setObjectName("record_num")
+        self.record_num.setToolTip("Min 10, max 20")
+        self.record_num_label = QtWidgets.QLabel(Form)
+        self.record_num_label.setGeometry(QtCore.QRect(110, 170, 101, 16))
+        self.record_num_label.setObjectName("record_num_label")
+        self.record_length = QtWidgets.QLineEdit(Form)
+        self.record_length.setGeometry(QtCore.QRect(230, 210, 131, 21))
+        self.record_length.setText("")
+        self.record_length.setPlaceholderText("")
+        self.record_length.setObjectName("record_length")
+        self.record_length.setToolTip("Min 15, max 30")
+        self.record_length_label = QtWidgets.QLabel(Form)
+        self.record_length_label.setGeometry(QtCore.QRect(110, 210, 111, 16))
+        self.record_length_label.setObjectName("record_length_label")
+        self.ok_btn = QtWidgets.QPushButton(Form)
+        self.ok_btn.setGeometry(QtCore.QRect(250, 280, 113, 32))
+        self.ok_btn.setObjectName("ok_btn")
+        self.cancel_btn = QtWidgets.QPushButton(Form)
+        self.cancel_btn.setGeometry(QtCore.QRect(110, 280, 113, 32))
+        self.cancel_btn.setObjectName("cancel_btn")
+
+        self.retranslateUi(Form)
+        QtCore.QMetaObject.connectSlotsByName(Form)
+
+        # Connect ui parts
+        self.ok_btn.clicked.connect(self.open_camera)
+        self.cancel_btn.clicked.connect(self.cancel_btn_click)
+
+        validator = QRegExpValidator(QRegExp("\d+"))
+        self.jmbag.setValidator(validator)
+        self.record_num.setValidator(validator)
+        self.record_length.setValidator(validator)
+
+        self.name.textChanged.connect(lambda: self.check_state(self.name))
+        self.surname.textChanged.connect(lambda: self.check_state(self.surname))
+        self.jmbag.textChanged.connect(lambda: self.check_state(self.jmbag))
+        self.record_num.textChanged.connect(lambda: self.check_state(self.record_num))
+        self.record_length.textChanged.connect(lambda: self.check_state(self.record_length))
+
+    def retranslateUi(self, Form):
+        _translate = QtCore.QCoreApplication.translate
+        Form.setWindowTitle(_translate("Form", "Prijava"))
+        self.name_label.setText(_translate("Form", "Ime *"))
+        self.surname_label.setText(_translate("Form", "Prezime *"))
+        self.jmbag_label.setText(_translate("Form", "JMBAG *"))
+        self.record_num_label.setText(_translate("Form", "Broj mjerenja *"))
+        self.record_length_label.setText(_translate("Form", "Duljina mjerenja *"))
+        self.ok_btn.setText(_translate("Form", "Ok"))
+        self.cancel_btn.setText(_translate("Form", "Odustani"))
+
+    def set_state(self, sender, color):
+        sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
+
+    def check_state(self, sender):
+
+        if sender == self.name:
+            if len(self.name.text().strip()) > 0:
+                self.isNameValid = True
+                self.set_state(self.name, self.color)
+            elif len(self.name.text().strip()) == 0:
+                self.set_state(self.name, self.color)
+                self.isNameValid = False
+            else:
+                self.set_state(self.name, self.errorColor)
+                self.isNameValid = False
+
+        if sender == self.surname:
+            if len(self.surname.text().strip()) > 0:
+                self.isSurnameValid = True
+                self.set_state(self.surname, self.color)
+            elif len(self.surname.text().strip()) == 0:
+                self.set_state(self.surname, self.color)
+                self.isSurnameValid = False
+            else:
+                self.set_state(self.surname, self.errorColor)
+                self.isSurnameValid = False
+
+        if sender == self.jmbag:
+            if len(self.jmbag.text().strip()) == 10:
+                self.isJmbagValid = True
+                self.set_state(self.jmbag, self.color)
+            elif len(self.jmbag.text().strip()) == 0:
+                self.set_state(self.jmbag, self.color)
+                self.isJmbagValid = False
+            else:
+                self.set_state(self.jmbag, self.errorColor)
+                self.isJmbagValid = False
+
+        if sender == self.record_num:
+            if len(self.record_num.text()) > 0 and 10 <= int(self.record_num.text()) <= 20:
+                self.isRecordNumValid = True
+                self.set_state(self.record_num, self.color)
+            elif len(self.record_num.text()) == 0:
+                self.set_state(self.record_num, self.color)
+                self.isRecordNumValid = False
+            else:
+                self.set_state(self.record_num, self.errorColor)
+                self.isRecordNumValid = False
+
+        if sender == self.record_length:
+            if len(self.record_length.text()) > 0 and 15 <= int(self.record_length.text()) <= 30:
+                self.isRecordLengthValid = True
+                self.set_state(self.record_length, self.color)
+            elif len(self.record_length.text()) == 0:
+                self.set_state(self.record_length, self.color)
+                self.isRecordLengthValid = False
+            else:
+                self.set_state(self.record_length, self.errorColor)
+                self.isRecordLengthValid = False
+
+        if self.isNameValid and self.isSurnameValid and self.isJmbagValid and self.isRecordNumValid and self.isRecordLengthValid:
+            return True
+        else:
+            return False
+
+    def open_camera(self):
+        if self.check_state(None):
+            parser = argparse.ArgumentParser(description='Webcam pulse detector.')
+            parser.add_argument('--serial', default=None,
+                                help='serial port destination for bpm data')
+            parser.add_argument('--baud', default=None,
+                                help='Baud rate for serial transmission')
+            parser.add_argument('--udp', default=None,
+                                help='udp address:port destination for bpm data')
+
+            args = parser.parse_args()
+            App = getPulseApp(args)
+            while True:
+                App.main_loop()
+
+    def cancel_btn_click(self):
+        sys.exit()
+
+
+if __name__ == "__main__":
+    window()

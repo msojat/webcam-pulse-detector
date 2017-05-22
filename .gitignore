@@ -2,6 +2,7 @@
 #######
 *.wpr
 *.wpu
+.idea/*
 
 # log files #
 #######
