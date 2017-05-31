@@ -4,6 +4,12 @@ import cv2
 import pylab
 import os
 import sys
+from datetime import datetime
+import pyautogui
+import requests
+import json
+import time
+from constants import constants
 
 
 def resource_path(relative_path):
@@ -49,9 +55,20 @@ class findFaceGetPulse(object):
 
         self.idx = 1
         self.find_faces = True
+        self.counter = 0
+        self.is_success = True
 
-    def find_faces_toggle(self):
+    def find_faces_toggle(self, data):
         self.find_faces = not self.find_faces
+        self.start_time = int(self.get_current_time())
+        self.end_time = data[u"record_length"] + int(self.start_time)
+        self.data = data
+        self.heart_rates = []
+
+        if self.is_success:
+            self.counter = self.counter + 1
+            self.is_success = False
+
         return self.find_faces
 
     def get_faces(self):
@@ -115,21 +132,15 @@ class findFaceGetPulse(object):
         quit()
 
     def run(self, cam):
+        # print data
         self.times.append(time.time() - self.t0)
         self.frame_out = self.frame_in
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
                                                   cv2.COLOR_BGR2GRAY))
         col = (100, 255, 100)
         if self.find_faces:
-            cv2.putText(
-                self.frame_out, "Press 'C' to change camera (current: %s)" % str(
-                    cam),
-                (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            cv2.putText(
-                self.frame_out, "Press 'S' to lock face and begin",
-                (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                        (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+            cv2.putText(self.frame_out, "Press 'S' to lock face and begin", (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+            cv2.putText(self.frame_out, "Press 'Esc' to quit", (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             self.data_buffer, self.times, self.trained = [], [], False
             detected = list(self.face_cascade.detectMultiScale(self.gray,
                                                                scaleFactor=1.3,
@@ -156,16 +167,12 @@ class findFaceGetPulse(object):
         if set(self.face_rect) == set([1, 1, 2, 2]):
             return
         cv2.putText(
-            self.frame_out, "Press 'C' to change camera (current: %s)" % str(
-                cam),
-            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-        cv2.putText(
             self.frame_out, "Press 'S' to restart",
-            (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-        cv2.putText(self.frame_out, "Press 'D' to toggle data plot",
-                    (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+        cv2.putText(self.frame_out, "Records: {0} / {1}".format(self.counter, self.data[u"number_of_records"]),
+                    (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
         cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                    (10, 100), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                    (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
 
         forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
         self.draw_rect(forehead1)
@@ -220,15 +227,40 @@ class findFaceGetPulse(object):
                 self.frame_in[y:y + h, x:x + w, 1] + \
                 beta * self.gray[y:y + h, x:x + w]
             b = alpha * self.frame_in[y:y + h, x:x + w, 2]
-            self.frame_out[y:y + h, x:x + w] = cv2.merge([r,
-                                                          g,
-                                                          b])
+            self.frame_out[y:y + h, x:x + w] = cv2.merge([r, g, b])
             x1, y1, w1, h1 = self.face_rect
             self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
             col = (100, 255, 100)
-            gap = (self.buffer_size - L) / self.fps
-            # self.bpms.append(bpm)
-            # self.ttimes.append(time.time())
+            # gap = (self.buffer_size - L) / self.fps
+            # get remaining time
+            gap = int(self.end_time) - int(self.get_current_time())
+
+            # check if recording is finished
+            self.heart_rates.append(self.bpm)
+            if gap == 0:
+                url = "{0}{1}".format(constants.BASE_URL, "add_record")
+                body = {
+                    "user_id": int(self.data[u"user_id"]),
+                    "record_length": int(self.data[u"record_length"]),
+                    "identifier_id": int(self.data[u"identifier_id"]),
+                    "record_number": self.counter,
+                    "start_record_time": self.get_formatted_time(self.start_time),
+                    "end_record_time": self.get_formatted_time(self.end_time),
+                    "heart_rate": "{:.2f}".format(np.average(self.heart_rates)),
+                    "app_secret": constants.get_app_secret()
+                }
+
+                try:
+                    response = requests.post(url=url, data=body)
+
+                    if response.status_code == constants.STATUS_NO_CONTENT:
+                        self.is_success = True
+
+                        # simulate "s" key pressed to end recording
+                        pyautogui.press("s")
+
+                except Exception:
+                    self.showMessageBox("error", "Error occurred")
             if gap:
                 text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
             else:
@@ -236,3 +268,18 @@ class findFaceGetPulse(object):
             tsize = 1
             cv2.putText(self.frame_out, text,
                         (x - w / 2, y), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+
+    def get_current_time(self):
+        year = datetime.now().timetuple().tm_year
+        month = datetime.now().timetuple().tm_mon
+        day = datetime.now().timetuple().tm_mday
+        hour = datetime.now().timetuple().tm_hour
+        minute = datetime.now().timetuple().tm_min
+        second = datetime.now().timetuple().tm_sec
+
+        current = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+        return current.strftime("%s")
+
+    def get_formatted_time(self, time_seconds):
+        FMT = "%Y-%m-%d %H:%M:%S"
+        return time.strftime(FMT, time.gmtime(time_seconds))

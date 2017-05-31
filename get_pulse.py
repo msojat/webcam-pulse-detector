@@ -11,13 +11,12 @@ import datetime
 from serial import Serial
 import socket
 import sys
+import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 import requests
 import json
-
-STATUS_OK = 200
-STATUS_NO_CONTENT = 204
-BASE_URL = "http://localhost:3000/api/"
+import time
+from constants import constants
 
 
 def window():
@@ -96,10 +95,9 @@ class getPulseApp(object):
 
         # Maps keystrokes to specified methods
         # (A GUI window must have focus for these to work)
-        self.key_controls = {"s": self.toggle_search,
-                             "d": self.toggle_display_plot,
-                             "c": self.toggle_cam,
-                             "f": self.write_csv}
+        self.key_controls = {
+            "s": self.toggle_search
+        }
 
     def toggle_cam(self):
         if len(self.cameras) > 1:
@@ -127,7 +125,7 @@ class getPulseApp(object):
         data quality, once a forehead has been sucessfully isolated.
         """
         # state = self.processor.find_faces.toggle()
-        state = self.processor.find_faces_toggle()
+        state = self.processor.find_faces_toggle(self.data)
         print "face detection lock =", not state
 
     def toggle_display_plot(self):
@@ -164,7 +162,7 @@ class getPulseApp(object):
 
     def key_handler(self):
         """
-        Handle keystrokes, as set at the bottom of __init__()
+        Handle keystrokes, as set at the bottom of __init__.py()
 
         A plotting or camera frame window must have focus for keypresses to be
         detected.
@@ -221,9 +219,8 @@ class getPulseApp(object):
     def setMainWindow(self, Form):
         self.form = Form
 
-    def setRequestData(self, data):
+    def setAppData(self, data):
         self.data = data
-        print data
 
 
 class Ui_Form(object):
@@ -309,9 +306,9 @@ class Ui_Form(object):
         self.record_num.textChanged.connect(lambda: self.check_state(self.record_num))
         self.record_length.textChanged.connect(lambda: self.check_state(self.record_length))
 
-        with open('../config.json') as config:
-            data = json.load(config)
-            self.app_secret = data["app_secret"]
+        # with open('../config.json') as config:
+        #     data = json.load(config)
+        #     self.app_secret = data["app_secret"]
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
@@ -363,7 +360,7 @@ class Ui_Form(object):
                 self.isJmbagValid = False
 
         if sender == self.record_num:
-            if len(self.record_num.text()) > 0 and 10 <= int(self.record_num.text()) <= 20:
+            if len(self.record_num.text()) > 0 and 1 <= int(self.record_num.text()) <= 100:
                 self.isRecordNumValid = True
                 self.set_state(self.record_num, self.color)
             elif len(self.record_num.text()) == 0:
@@ -374,7 +371,7 @@ class Ui_Form(object):
                 self.isRecordNumValid = False
 
         if sender == self.record_length:
-            if len(self.record_length.text()) > 0 and 20 <= int(self.record_length.text()) <= 30:
+            if len(self.record_length.text()) > 0 and 1 <= int(self.record_length.text()) <= 60:
                 self.isRecordLengthValid = True
                 self.set_state(self.record_length, self.color)
             elif len(self.record_length.text()) == 0:
@@ -392,22 +389,31 @@ class Ui_Form(object):
 
     def set_user(self):
         if self.check_state(None):
-            url = "{0}{1}".format(BASE_URL, "add_user")
+            url = "{0}{1}".format(constants.BASE_URL, "add_user")
             body = {
                 "name": self.name.text().strip(),
                 "surname": self.surname.text().strip(),
                 "jmbag": self.jmbag.text(),
                 "number_of_records": int(self.record_num.text()),
-                "app_secret": self.app_secret
+                "app_secret": constants.get_app_secret()
             }
 
-            response = requests.post(url=url, data=body)
-            data = json.loads(response.text)
+            try:
+                response = requests.post(url=url, data=body)
 
-            data[u"record_length"] = int(self.record_length.text())
+                if response.status_code == constants.STATUS_OK:
+                    data = json.loads(response.text)
 
-            if response.status_code == STATUS_OK:
-                self.open_camera(data)
+                    data[u"record_length"] = int(self.record_length.text())
+                    data[u"number_of_records"] = int(self.record_num.text())
+
+                    self.open_camera(data)
+
+            except Exception as err:
+                error_msg = "Connection refused" if str(err.message).__contains__("Connection refused") \
+                    else str(err.message)
+
+                self.showMessageBox("error", error_msg)
 
     def open_camera(self, data):
         parser = argparse.ArgumentParser(description='Webcam pulse detector.')
@@ -421,13 +427,21 @@ class Ui_Form(object):
         args = parser.parse_args()
         pulse_detector = getPulseApp(args)
         pulse_detector.setMainWindow(self.form)
-        pulse_detector.setRequestData(data)
+        pulse_detector.setAppData(data)
         pulse_detector.form.hide()
         while True:
             pulse_detector.main_loop()
 
     def cancel_btn_click(self):
         sys.exit()
+
+    def showMessageBox(self, title, message):
+        msg_box = QtWidgets.QMessageBox()
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setIcon(QtWidgets.QMessageBox.Warning)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg_box.exec_()
 
 
 if __name__ == "__main__":
