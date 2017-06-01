@@ -10,6 +10,7 @@ import requests
 import json
 import time
 from constants import constants
+from PyQt5 import QtWidgets
 
 
 def resource_path(relative_path):
@@ -31,7 +32,6 @@ class findFaceGetPulse(object):
         self.frame_out = np.zeros((10, 10))
         self.fps = 0
         self.buffer_size = 250
-        # self.window = np.hamming(self.buffer_size)
         self.data_buffer = []
         self.times = []
         self.ttimes = []
@@ -132,7 +132,6 @@ class findFaceGetPulse(object):
         quit()
 
     def run(self, cam):
-        # print data
         self.times.append(time.time() - self.t0)
         self.frame_out = self.frame_in
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
@@ -231,7 +230,6 @@ class findFaceGetPulse(object):
             x1, y1, w1, h1 = self.face_rect
             self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
             col = (100, 255, 100)
-            # gap = (self.buffer_size - L) / self.fps
             # get remaining time
             gap = int(self.end_time) - int(self.get_current_time())
 
@@ -243,6 +241,7 @@ class findFaceGetPulse(object):
                     "user_id": int(self.data[u"user_id"]),
                     "record_length": int(self.data[u"record_length"]),
                     "identifier_id": int(self.data[u"identifier_id"]),
+                    "number_of_records": int(self.data[u"number_of_records"]),
                     "record_number": self.counter,
                     "start_record_time": self.get_formatted_time(self.start_time),
                     "end_record_time": self.get_formatted_time(self.end_time),
@@ -254,13 +253,20 @@ class findFaceGetPulse(object):
                     response = requests.post(url=url, data=body)
 
                     if response.status_code == constants.STATUS_NO_CONTENT:
+                        self.avgData.append(int(np.average(self.heart_rates)))
+
                         self.is_success = True
 
                         # simulate "s" key pressed to end recording
                         pyautogui.press("s")
 
-                except Exception:
-                    self.showMessageBox("error", "Error occurred")
+                        if self.counter == self.data[u"number_of_records"]:
+                            self.showMessageBox(
+                                "Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
+
+                except Exception as err:
+                    print err.message
+
             if gap:
                 text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
             else:
@@ -283,3 +289,15 @@ class findFaceGetPulse(object):
     def get_formatted_time(self, time_seconds):
         FMT = "%Y-%m-%d %H:%M:%S"
         return time.strftime(FMT, time.gmtime(time_seconds))
+
+    def initData(self):
+        self.avgData = []
+
+    def showMessageBox(self, message):
+        msg_box = QtWidgets.QMessageBox()
+        msg_box.setText(message)
+        msg_box.setIcon(QtWidgets.QMessageBox.Information)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        result = msg_box.exec_()
+        if result == QtWidgets.QMessageBox.Ok:
+            sys.exit()

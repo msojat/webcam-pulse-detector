@@ -221,6 +221,7 @@ class getPulseApp(object):
 
     def setAppData(self, data):
         self.data = data
+        self.processor.initData()
 
 
 class Ui_Form(object):
@@ -305,10 +306,6 @@ class Ui_Form(object):
         self.jmbag.textChanged.connect(lambda: self.check_state(self.jmbag))
         self.record_num.textChanged.connect(lambda: self.check_state(self.record_num))
         self.record_length.textChanged.connect(lambda: self.check_state(self.record_length))
-
-        # with open('../config.json') as config:
-        #     data = json.load(config)
-        #     self.app_secret = data["app_secret"]
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
@@ -413,7 +410,7 @@ class Ui_Form(object):
                 error_msg = "Connection refused" if str(err.message).__contains__("Connection refused") \
                     else str(err.message)
 
-                self.showMessageBox("error", error_msg)
+                self.showMessageBox(error_msg)
 
     def open_camera(self, data):
         parser = argparse.ArgumentParser(description='Webcam pulse detector.')
@@ -435,9 +432,8 @@ class Ui_Form(object):
     def cancel_btn_click(self):
         sys.exit()
 
-    def showMessageBox(self, title, message):
+    def showMessageBox(self, message):
         msg_box = QtWidgets.QMessageBox()
-        msg_box.setWindowTitle(title)
         msg_box.setText(message)
         msg_box.setIcon(QtWidgets.QMessageBox.Warning)
         msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
