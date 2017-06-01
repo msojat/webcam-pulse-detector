@@ -296,10 +296,14 @@ class Ui_Form(object):
         self.ok_btn.clicked.connect(self.set_user)
         self.cancel_btn.clicked.connect(self.cancel_btn_click)
 
-        validator = QRegExpValidator(QRegExp("\d+"))
-        self.jmbag.setValidator(validator)
-        self.record_num.setValidator(validator)
-        self.record_length.setValidator(validator)
+        numberValidator = QRegExpValidator(QRegExp("\d+"))
+        self.jmbag.setValidator(numberValidator)
+        self.record_num.setValidator(numberValidator)
+        self.record_length.setValidator(numberValidator)
+
+        nameValidator = QRegExpValidator(QRegExp("[a-zA-Z ]+"))
+        self.name.setValidator(nameValidator)
+        self.surname.setValidator(nameValidator)
 
         self.name.textChanged.connect(lambda: self.check_state(self.name))
         self.surname.textChanged.connect(lambda: self.check_state(self.surname))
