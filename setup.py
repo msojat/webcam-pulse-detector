@@ -8,12 +8,12 @@ Usage:
 from setuptools import setup
 
 APP = ['get_pulse.py']
-DATA_FILES = ['cascades/haarcascade_frontalface_alt.xml']
+DATA_FILES = ['haarcascade_frontalface_alt.xml']
 OPTIONS = {'argv_emulation': True}
 
 setup(
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
-    setup_requires=['py2app'],
+    setup_requires=['py2app']
 )
