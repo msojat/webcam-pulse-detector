@@ -396,7 +396,7 @@ class Ui_Form(object):
                 "surname": self.surname.text().strip(),
                 "jmbag": self.jmbag.text(),
                 "number_of_records": int(self.record_num.text()),
-                "app_secret": constants.get_app_secret()
+                "app_secret": constants.APP_SECRET
             }
 
             try:

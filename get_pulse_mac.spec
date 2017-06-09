@@ -1,7 +1,7 @@
 # -*- mode: python -*-
 a = Analysis(['get_pulse.py'],
              pathex=[
-                 '/Users/tristanhearn/Documents/thearn_repos/webcam-pulse-detector'],
+                 '/Users/dfodor/diplomski/webcam-pulse-detector'],
              hiddenimports=[],
              hookspath=None,
              runtime_hooks=None)

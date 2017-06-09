@@ -1,28 +1,33 @@
 # -*- mode: python -*-
+
+block_cipher = None
+
+
 a = Analysis(['get_pulse.py'],
-             pathex=[
-                 '/Users/tristanhearn/Documents/thearn_repos/webcam-pulse-detector'],
+             pathex=['/Users/dfodor/diplomski/webcam-pulse-detector'],
+             binaries=[],
+             datas=[],
              hiddenimports=[],
-             hookspath=None,
-             runtime_hooks=None)
-a.datas += [
-    ('haarcascade_frontalface_alt.xml', 'haarcascade_frontalface_alt.xml', 'DATA')]
-pyz = PYZ(a.pure)
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=[],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data,
+             cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='get_pulse',
           debug=False,
-          strip=None,
+          strip=False,
           upx=True,
-          console=False)
+          console=True )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
-               strip=None,
+               strip=False,
                upx=True,
                name='get_pulse')
-app = BUNDLE(coll,
-             name='get_pulse.app',
-             icon=None)
