@@ -12,11 +12,14 @@ from serial import Serial
 import socket
 import sys
 import os
+from os.path import expanduser
+import platform
 from PyQt5 import QtCore, QtGui, QtWidgets
 import requests
 import json
 import time
 from constants import constants
+import inspect
 
 
 def window():
@@ -26,7 +29,37 @@ def window():
     ui.setupUi(Form)
     Form.setFixedSize(Form.size())
     Form.show()
+
+    # get $HOME folder
+    path = expanduser("~")
+
+    if platform.system() == constants.WINDOWS:
+        constants.delimiter = "\\"
+        create_app_folder(path, constants.delimiter)
+    else:
+        constants.delimiter = "/"
+        create_app_folder(path, constants.delimiter)
+
+    with open(os.getcwd() + constants.delimiter + "host.json") as config:
+        data = json.load(config)
+        constants.BASE_URL = constants.get_host(data["http"], data["host"], data["port"])
+
     sys.exit(app.exec_())
+
+
+def create_app_folder(path, delimiter):
+    # create folder
+    if not os.path.exists(path + delimiter + constants.FOLDER):
+        os.makedirs(path + delimiter + constants.FOLDER)
+
+    # go into folder
+    os.chdir(path + delimiter + constants.FOLDER)
+    # create file
+    if not os.path.exists(constants.HOST_JSON_FILE):
+        f = open(constants.HOST_JSON_FILE, 'w+')
+        json_content = json.loads('{ "http": "http", "host": "localhost", "port": "3000" }')
+        json.dump(json_content, f)
+        f.close()
 
 
 class getPulseApp(object):
@@ -255,7 +288,7 @@ class Ui_Form(object):
         self.surname.setObjectName("surname")
         self.surname.setMaxLength(45)
         self.surname_label = QtWidgets.QLabel(Form)
-        self.surname_label.setGeometry(QtCore.QRect(110, 90, 60, 16))
+        self.surname_label.setGeometry(QtCore.QRect(110, 90, 70, 16))
         self.surname_label.setObjectName("surname_label")
         self.jmbag = QtWidgets.QLineEdit(Form)
         self.jmbag.setGeometry(QtCore.QRect(180, 130, 181, 21))
@@ -266,22 +299,27 @@ class Ui_Form(object):
         self.jmbag_label.setGeometry(QtCore.QRect(110, 130, 60, 16))
         self.jmbag_label.setObjectName("jmbag_label")
         self.record_num = QtWidgets.QLineEdit(Form)
-        self.record_num.setGeometry(QtCore.QRect(230, 170, 131, 21))
-        self.record_num.setText("10")
+        self.record_num.setGeometry(QtCore.QRect(260, 170, 101, 21))
+        self.record_num.setText("5")
         self.record_num.setObjectName("record_num")
-        self.record_num.setToolTip("Min 10, max 20")
+        self.record_num.setToolTip("Min 1, max 100")
         self.record_num_label = QtWidgets.QLabel(Form)
-        self.record_num_label.setGeometry(QtCore.QRect(110, 170, 101, 16))
+        self.record_num_label.setGeometry(QtCore.QRect(110, 170, 131, 16))
         self.record_num_label.setObjectName("record_num_label")
         self.record_length = QtWidgets.QLineEdit(Form)
-        self.record_length.setGeometry(QtCore.QRect(230, 210, 131, 21))
-        self.record_length.setText("20")
+        self.record_length.setGeometry(QtCore.QRect(260, 210, 101, 21))
+        self.record_length.setText("30")
         self.record_length.setPlaceholderText("")
         self.record_length.setObjectName("record_length")
-        self.record_length.setToolTip("Min 15, max 30")
+        self.record_length.setToolTip("Min 1, max 60")
         self.record_length_label = QtWidgets.QLabel(Form)
         self.record_length_label.setGeometry(QtCore.QRect(110, 210, 111, 16))
         self.record_length_label.setObjectName("record_length_label")
+        self.required = QtWidgets.QLabel(Form)
+        self.required.setGeometry(QtCore.QRect(110, 250, 111, 16))
+        self.required.setObjectName("required")
+        self.required.setText("Required *")
+        self.required.setStyleSheet("#required { color: #c42033 }")
         self.ok_btn = QtWidgets.QPushButton(Form)
         self.ok_btn.setGeometry(QtCore.QRect(250, 280, 113, 32))
         self.ok_btn.setObjectName("ok_btn")
@@ -313,14 +351,14 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Prijava"))
-        self.name_label.setText(_translate("Form", "Ime *"))
-        self.surname_label.setText(_translate("Form", "Prezime *"))
+        Form.setWindowTitle(_translate("Form", "Login"))
+        self.name_label.setText(_translate("Form", "Name *"))
+        self.surname_label.setText(_translate("Form", "Surname *"))
         self.jmbag_label.setText(_translate("Form", "JMBAG *"))
-        self.record_num_label.setText(_translate("Form", "Broj mjerenja *"))
-        self.record_length_label.setText(_translate("Form", "Duljina mjerenja *"))
+        self.record_num_label.setText(_translate("Form", "Number of records *"))
+        self.record_length_label.setText(_translate("Form", "Record length *"))
         self.ok_btn.setText(_translate("Form", "Ok"))
-        self.cancel_btn.setText(_translate("Form", "Odustani"))
+        self.cancel_btn.setText(_translate("Form", "Cancel"))
 
     def set_state(self, sender, color):
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
