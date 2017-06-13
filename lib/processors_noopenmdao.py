@@ -60,8 +60,8 @@ class findFaceGetPulse(object):
 
     def find_faces_toggle(self, data):
         self.find_faces = not self.find_faces
-        self.start_time = int(self.get_current_time())
-        self.end_time = data[u"record_length"] + int(self.start_time)
+        self.start_time = self.get_current_time()
+        self.end_time = data[u"record_length"] + self.start_time
         self.data = data
         self.heart_rates = []
 
@@ -231,7 +231,7 @@ class findFaceGetPulse(object):
             self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
             col = (100, 255, 100)
             # get remaining time
-            gap = int(self.end_time) - int(self.get_current_time())
+            gap = self.end_time - self.get_current_time()
 
             # check if recording is finished
             self.heart_rates.append(self.bpm)
@@ -284,7 +284,7 @@ class findFaceGetPulse(object):
         second = datetime.now().timetuple().tm_sec
 
         current = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-        return current.strftime("%s")
+        return time.mktime(current.timetuple())
 
     def get_formatted_time(self, time_seconds):
         FMT = "%Y-%m-%d %H:%M:%S"

@@ -30,6 +30,8 @@ def window():
     Form.setFixedSize(Form.size())
     Form.show()
 
+    original_path = os.path.dirname(os.path.realpath(sys.argv[0]))
+
     # get $HOME folder
     path = expanduser("~")
 
@@ -43,6 +45,8 @@ def window():
     with open(os.getcwd() + constants.delimiter + "host.json") as config:
         data = json.load(config)
         constants.BASE_URL = constants.get_host(data["http"], data["host"], data["port"])
+
+    os.chdir(original_path)
 
     sys.exit(app.exec_())
 
