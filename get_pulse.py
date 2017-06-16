@@ -42,7 +42,7 @@ def window():
         constants.delimiter = "/"
         create_app_folder(path, constants.delimiter)
 
-    with open(os.getcwd() + constants.delimiter + "host.json") as config:
+    with open(os.getcwd() + constants.delimiter + constants.CONFIG_JSON_FILE) as config:
         data = json.load(config)
         constants.BASE_URL = constants.get_host(data["http"], data["host"], data["port"])
 
@@ -59,8 +59,8 @@ def create_app_folder(path, delimiter):
     # go into folder
     os.chdir(path + delimiter + constants.FOLDER)
     # create file
-    if not os.path.exists(constants.HOST_JSON_FILE):
-        f = open(constants.HOST_JSON_FILE, 'w+')
+    if not os.path.exists(constants.CONFIG_JSON_FILE):
+        f = open(constants.CONFIG_JSON_FILE, 'w+')
         json_content = json.loads('{ "http": "http", "host": "localhost", "port": "3000" }')
         json.dump(json_content, f)
         f.close()

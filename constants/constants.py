@@ -3,7 +3,7 @@ STATUS_NO_CONTENT = 204
 BASE_URL = ""
 APP_SECRET = "some_app_secret"
 FOLDER = ".get_pulse"
-HOST_JSON_FILE = "host.json"
+CONFIG_JSON_FILE = "config.json"
 WINDOWS = "Windows"
 delimiter = ""
 

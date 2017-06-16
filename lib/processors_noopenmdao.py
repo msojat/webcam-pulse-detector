@@ -284,7 +284,7 @@ class findFaceGetPulse(object):
         second = datetime.now().timetuple().tm_sec
 
         current = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-        return time.mktime(current.timetuple())
+        return (current - datetime(1970, 1, 1)).total_seconds()
 
     def get_formatted_time(self, time_seconds):
         FMT = "%Y-%m-%d %H:%M:%S"
