@@ -1,0 +1,16 @@
+Pillow==2.7.0
+PyAutoGUI==0.9.36
+PyInstaller==3.2.1
+PyMsgBox==1.0.6
+PyScreeze==0.1.11
+PyTweening==1.0.3
+certifi==2017.4.17
+chardet==3.0.4
+future==0.16.0
+idna==2.5
+numpy==1.13.0
+pypiwin32==219
+pyserial==3.3
+python-qt5==0.1.10
+requests==2.17.3
+urllib3==1.21.1
