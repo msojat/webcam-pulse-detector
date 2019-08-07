@@ -200,7 +200,6 @@ class findFaceGetPulse(object):
             phase = np.angle(raw)
             self.fft = np.abs(raw)
             self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
-
             freqs = 60. * self.freqs
             idx = np.where((freqs > 50) & (freqs < 180))
 
@@ -210,7 +209,10 @@ class findFaceGetPulse(object):
             pfreq = freqs[idx]
             self.freqs = pfreq
             self.fft = pruned
-            idx2 = np.argmax(pruned)
+            if pruned.any():
+                idx2 = np.argmax(pruned)
+            else:
+                return
 
             t = (np.sin(phase[idx2]) + 1.) / 2.
             t = 0.9 * t + 0.1
