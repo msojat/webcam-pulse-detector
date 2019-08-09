@@ -23,13 +23,19 @@ import inspect
 
 
 def window():
+    ########################
+    #     UI Creation      #
+    ########################
     app = QtWidgets.QApplication(sys.argv)
-    Form = QtWidgets.QWidget()
-    ui = Ui_Form()
-    ui.setupUi(Form)
-    Form.setFixedSize(Form.size())
-    Form.show()
 
+    form_window = QtWidgets.QWidget()
+    Ui_Form().setupUi(form_window)
+    form_window.setFixedSize(form_window.size())
+    form_window.show()
+
+    ################################################################
+    # Configuration file creation / reading in HOME(~) directory   #
+    ################################################################
     original_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 
     # get $HOME folder
@@ -37,10 +43,9 @@ def window():
 
     if platform.system() == constants.WINDOWS:
         constants.delimiter = "\\"
-        create_app_folder(path, constants.delimiter)
     else:
         constants.delimiter = "/"
-        create_app_folder(path, constants.delimiter)
+    create_app_folder(path, constants.delimiter)
 
     with open(os.getcwd() + constants.delimiter + constants.CONFIG_JSON_FILE) as config:
         data = json.load(config)
@@ -48,6 +53,7 @@ def window():
 
     os.chdir(original_path)
 
+    # Start GUI
     sys.exit(app.exec_())
 
 
@@ -212,7 +218,6 @@ class getPulseApp(object):
                 cam.cam.release()
             if self.send_serial:
                 self.serial.close()
-            self.form.show()
             sys.exit()
 
         for key in self.key_controls.keys():
@@ -253,91 +258,91 @@ class getPulseApp(object):
         # handle any key presses
         self.key_handler()
 
-    def setMainWindow(self, Form):
-        self.form = Form
-
     def setAppData(self, data):
         self.data = data
         self.processor.initData()
 
 
 class Ui_Form(object):
-    def setupUi(self, Form):
-        Form.setObjectName("Form")
-        Form.resize(485, 364)
-        Form.setStyleSheet("QWidget{ background-color: #ffffff; }")
+    def setupUi(self, form_window):
+        form_window.setObjectName("Form")
+        form_window.resize(485, 364)
+        form_window.setStyleSheet("QWidget{ background-color: #ffffff; }")
 
-        self.form = Form
+        self.form = form_window
 
         self.errorColor = '#f6989d'
         self.color = '#ffffff'
 
+        ## Validation Flags ##
         self.isNameValid = False
         self.isSurnameValid = False
         self.isJmbagValid = False
         self.isRecordNumValid = True  # minimal default value is set
         self.isRecordLengthValid = True  # minimal default value is set
 
-        self.name = QtWidgets.QLineEdit(Form)
+        ## Form elements (inputs) init ##
+        self.name = QtWidgets.QLineEdit(form_window)
         self.name.setGeometry(QtCore.QRect(180, 50, 181, 21))
         self.name.setText("")
         self.name.setObjectName("name")
         self.name.setMaxLength(45)
-        self.name_label = QtWidgets.QLabel(Form)
+        self.name_label = QtWidgets.QLabel(form_window)
         self.name_label.setGeometry(QtCore.QRect(110, 50, 60, 16))
         self.name_label.setObjectName("name_label")
-        self.surname = QtWidgets.QLineEdit(Form)
+        self.surname = QtWidgets.QLineEdit(form_window)
         self.surname.setGeometry(QtCore.QRect(180, 90, 181, 21))
         self.surname.setText("")
         self.surname.setObjectName("surname")
         self.surname.setMaxLength(45)
-        self.surname_label = QtWidgets.QLabel(Form)
+        self.surname_label = QtWidgets.QLabel(form_window)
         self.surname_label.setGeometry(QtCore.QRect(110, 90, 70, 16))
         self.surname_label.setObjectName("surname_label")
-        self.jmbag = QtWidgets.QLineEdit(Form)
+        self.jmbag = QtWidgets.QLineEdit(form_window)
         self.jmbag.setGeometry(QtCore.QRect(180, 130, 181, 21))
         self.jmbag.setText("")
         self.jmbag.setObjectName("jmbag")
         self.jmbag.setMaxLength(10)
-        self.jmbag_label = QtWidgets.QLabel(Form)
+        self.jmbag_label = QtWidgets.QLabel(form_window)
         self.jmbag_label.setGeometry(QtCore.QRect(110, 130, 60, 16))
         self.jmbag_label.setObjectName("jmbag_label")
-        self.record_num = QtWidgets.QLineEdit(Form)
+        self.record_num = QtWidgets.QLineEdit(form_window)
         self.record_num.setGeometry(QtCore.QRect(260, 170, 101, 21))
         self.record_num.setText("5")
         self.record_num.setObjectName("record_num")
         self.record_num.setToolTip("Min 1, max 100")
-        self.record_num_label = QtWidgets.QLabel(Form)
+        self.record_num_label = QtWidgets.QLabel(form_window)
         self.record_num_label.setGeometry(QtCore.QRect(110, 170, 131, 16))
         self.record_num_label.setObjectName("record_num_label")
-        self.record_length = QtWidgets.QLineEdit(Form)
+        self.record_length = QtWidgets.QLineEdit(form_window)
         self.record_length.setGeometry(QtCore.QRect(260, 210, 101, 21))
         self.record_length.setText("30")
         self.record_length.setPlaceholderText("")
         self.record_length.setObjectName("record_length")
         self.record_length.setToolTip("Min 1, max 60")
-        self.record_length_label = QtWidgets.QLabel(Form)
+        self.record_length_label = QtWidgets.QLabel(form_window)
         self.record_length_label.setGeometry(QtCore.QRect(110, 210, 111, 16))
         self.record_length_label.setObjectName("record_length_label")
-        self.required = QtWidgets.QLabel(Form)
+        self.required = QtWidgets.QLabel(form_window)
         self.required.setGeometry(QtCore.QRect(110, 250, 111, 16))
         self.required.setObjectName("required")
         self.required.setText("Required *")
         self.required.setStyleSheet("#required { color: #c42033 }")
-        self.ok_btn = QtWidgets.QPushButton(Form)
+        self.ok_btn = QtWidgets.QPushButton(form_window)
         self.ok_btn.setGeometry(QtCore.QRect(250, 280, 113, 32))
         self.ok_btn.setObjectName("ok_btn")
-        self.cancel_btn = QtWidgets.QPushButton(Form)
+        self.cancel_btn = QtWidgets.QPushButton(form_window)
         self.cancel_btn.setGeometry(QtCore.QRect(110, 280, 113, 32))
         self.cancel_btn.setObjectName("cancel_btn")
 
-        self.retranslateUi(Form)
-        QtCore.QMetaObject.connectSlotsByName(Form)
+        self.retranslateUi(form_window)
+        QtCore.QMetaObject.connectSlotsByName(form_window)
 
-        # Connect ui parts
+        # Connect ui parts (associate click listeners)
         self.ok_btn.clicked.connect(self.set_user)
         self.cancel_btn.clicked.connect(self.cancel_btn_click)
 
+        # Set Input Validators
         numberValidator = QRegExpValidator(QRegExp("\d+"))
         self.jmbag.setValidator(numberValidator)
         self.record_num.setValidator(numberValidator)
@@ -347,6 +352,7 @@ class Ui_Form(object):
         self.name.setValidator(nameValidator)
         self.surname.setValidator(nameValidator)
 
+        # Validate Input values on Text Change
         self.name.textChanged.connect(lambda: self.check_state(self.name))
         self.surname.textChanged.connect(lambda: self.check_state(self.surname))
         self.jmbag.textChanged.connect(lambda: self.check_state(self.jmbag))
@@ -469,9 +475,10 @@ class Ui_Form(object):
 
         args = parser.parse_args()
         pulse_detector = getPulseApp(args)
-        pulse_detector.setMainWindow(self.form)
         pulse_detector.setAppData(data)
-        pulse_detector.form.hide()
+
+        self.form.hide()
+
         while True:
             pulse_detector.main_loop()
 

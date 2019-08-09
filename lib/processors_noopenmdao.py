@@ -237,7 +237,7 @@ class findFaceGetPulse(object):
 
             # check if recording is finished
             self.heart_rates.append(self.bpm)
-            if gap == 0:
+            if gap <= 0:
                 url = "{0}{1}".format(constants.BASE_URL, "add_record")
                 body = {
                     "user_id": int(self.data[u"user_id"]),
