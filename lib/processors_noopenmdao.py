@@ -263,8 +263,7 @@ class findFaceGetPulse(object):
                         pyautogui.press("s")
 
                         if self.counter == self.data[u"number_of_records"]:
-                            self.showMessageBox(
-                                "Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
+                            self.showMessageBox("Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
 
                 except Exception as err:
                     print err.message
@@ -301,5 +300,5 @@ class findFaceGetPulse(object):
         msg_box.setIcon(QtWidgets.QMessageBox.Information)
         msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
         result = msg_box.exec_()
-        if result == QtWidgets.QMessageBox.Ok:
-            sys.exit()
+        #if result == QtWidgets.QMessageBox.Ok:
+            #sys.exit()
