@@ -1,9 +1,12 @@
+import argparse
 import sys
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 from lib.ImageWindow import ImageWindow
+from lib.PulseApp import PulseApp
 from lib.Ui_Form import Ui_Form
 
 
@@ -18,10 +21,44 @@ class MainWindow(QWidget):
         layout.addWidget(self.form_window)
         self.setLayout(layout)
 
+        self.pulse_detector = self._create_pulse_detector()
+
     def form_ok_cllback(self):
         if self.form_window:
             self.form_window.set_user()
-            self.form_window.open_camera(self.form_window.get_data(), self.image_window
-                                         .findChild(QLabel, "image_label"))
+            self.open_camera(self.form_window.get_data())
         else:
             sys.exit()
+
+    def _create_pulse_detector(self):
+        parser = argparse.ArgumentParser(description='Webcam pulse detector.')
+        parser.add_argument('--serial', default=None,
+                            help='serial port destination for bpm data')
+        parser.add_argument('--baud', default=None,
+                            help='Baud rate for serial transmission')
+        parser.add_argument('--udp', default=None,
+                            help='udp address:port destination for bpm data')
+
+        args = parser.parse_args()
+        if not hasattr(self, "pulse_detector"):
+            return PulseApp(args)
+        else:
+            return self.pulse_detector
+
+    def open_camera(self, data):
+        self.pulse_detector.setAppData(data)
+
+        self.layout().removeWidget(self.form_window)
+        self.layout().addWidget(self.image_window)
+        while True:
+            self.pulse_detector.main_loop()
+
+            ndarray_image = self.pulse_detector.processor.frame_out
+            q_img = self.ndarray_to_qimage(ndarray_image)
+            q_pixmap = QPixmap(q_img)
+            self.image_window.findChild(QLabel, "image_label").setPixmap(q_pixmap)
+
+    def ndarray_to_qimage(self, ndarray):
+        height, width, channel = ndarray.shape
+        bytes_per_line = 3 * width
+        return QImage(ndarray.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()

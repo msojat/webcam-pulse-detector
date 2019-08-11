@@ -233,24 +233,6 @@ class Ui_Form(QWidget):
     def get_data(self):
         return self.data
 
-    def open_camera(self, data, image_label):
-        parser = argparse.ArgumentParser(description='Webcam pulse detector.')
-        parser.add_argument('--serial', default=None,
-                            help='serial port destination for bpm data')
-        parser.add_argument('--baud', default=None,
-                            help='Baud rate for serial transmission')
-        parser.add_argument('--udp', default=None,
-                            help='udp address:port destination for bpm data')
-
-        args = parser.parse_args()
-        pulse_detector = PulseApp(args)
-        pulse_detector.setAppData(data)
-
-        self.hide()
-
-        while True:
-            pulse_detector.main_loop(image_label)
-
     def cancel_btn_click(self):
         sys.exit()
 

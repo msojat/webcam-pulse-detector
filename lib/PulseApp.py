@@ -166,7 +166,7 @@ class PulseApp(object):
             if chr(self.pressed) == key:
                 self.key_controls[key]()
 
-    def main_loop(self, image_label):
+    def main_loop(self):
         """
         Single iteration of the application's main loop.
         """
