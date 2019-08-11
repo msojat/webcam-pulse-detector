@@ -1,16 +1,9 @@
 import numpy as np
-import time
 import cv2
-# import pylab
 import os
 import sys
 from datetime import datetime
-import pyautogui
-import requests
-import json
 import time
-from constants import constants
-from PyQt5 import QtWidgets
 
 
 def resource_path(relative_path):
@@ -57,6 +50,8 @@ class findFaceGetPulse(object):
         self.find_faces = True
         self.counter = 0
         self.is_success = True
+
+        self.time_gap = None
 
     def find_faces_toggle(self, data):
         self.find_faces = not self.find_faces
@@ -132,11 +127,16 @@ class findFaceGetPulse(object):
     #     quit()
 
     def run(self, cam):
+        """
+        Function used to process single image received from camera
+        """
         self.times.append(time.time() - self.t0)
         self.frame_out = self.frame_in
         self.gray = cv2.equalizeHist(cv2.cvtColor(self.frame_in,
                                                   cv2.COLOR_BGR2GRAY))
         col = (100, 255, 100)
+
+        # if not measuring
         if self.find_faces:
             cv2.putText(self.frame_out, "Press 'S' to lock face and begin", (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             cv2.putText(self.frame_out, "Press 'Esc' to quit", (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
@@ -165,6 +165,7 @@ class findFaceGetPulse(object):
             return
         if set(self.face_rect) == set([1, 1, 2, 2]):
             return
+        # else: -> While measuring
         cv2.putText(
             self.frame_out, "Press 'S' to restart",
             (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
@@ -180,6 +181,8 @@ class findFaceGetPulse(object):
 
         self.data_buffer.append(vals)
         L = len(self.data_buffer)
+        # If Data Buffer length is greater than
+        # specified size, discard oldest measurements
         if L > self.buffer_size:
             self.data_buffer = self.data_buffer[-self.buffer_size:]
             self.times = self.times[-self.buffer_size:]
@@ -187,9 +190,9 @@ class findFaceGetPulse(object):
 
         processed = np.array(self.data_buffer)
         self.samples = processed
+        # If there are more than 10 measurements, calculate bpm
         if L > 10:
             self.output_dim = processed.shape[0]
-            # print "ready"
 
             self.fps = float(L) / (self.times[-1] - self.times[0])
             even_times = np.linspace(self.times[0], self.times[-1], L)
@@ -233,43 +236,12 @@ class findFaceGetPulse(object):
             self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
             col = (100, 255, 100)
             # get remaining time
-            gap = self.end_time - self.get_current_time()
+            self.time_gap = self.end_time - self.get_current_time()
 
-            # check if recording is finished
             self.heart_rates.append(self.bpm)
-            if gap <= 0:
-                url = "{0}{1}".format(constants.BASE_URL, "add_record")
-                body = {
-                    "user_id": int(self.data[u"user_id"]),
-                    "record_length": int(self.data[u"record_length"]),
-                    "identifier_id": int(self.data[u"identifier_id"]),
-                    "number_of_records": int(self.data[u"number_of_records"]),
-                    "record_number": self.counter,
-                    "start_record_time": self.get_formatted_time(self.start_time),
-                    "end_record_time": self.get_formatted_time(self.end_time),
-                    "heart_rate": "{:.2f}".format(np.average(self.heart_rates)),
-                    "app_secret": constants.APP_SECRET
-                }
 
-                try:
-                    response = requests.post(url=url, data=body)
-
-                    if response.status_code == constants.STATUS_NO_CONTENT:
-                        self.avgData.append(int(np.average(self.heart_rates)))
-
-                        self.is_success = True
-
-                        # simulate "s" key pressed to end recording
-                        pyautogui.press("s")
-
-                        if self.counter == self.data[u"number_of_records"]:
-                            self.showMessageBox("Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
-
-                except Exception as err:
-                    print err.message
-
-            if gap:
-                text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, gap)
+            if self.time_gap:
+                text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, self.time_gap)
             else:
                 text = "(estimate: %0.1f bpm)" % (self.bpm)
             tsize = 1
@@ -286,19 +258,3 @@ class findFaceGetPulse(object):
 
         current = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
         return (current - datetime(1970, 1, 1)).total_seconds()
-
-    def get_formatted_time(self, time_seconds):
-        FMT = "%Y-%m-%d %H:%M:%S"
-        return time.strftime(FMT, time.gmtime(time_seconds))
-
-    def initData(self):
-        self.avgData = []
-
-    def showMessageBox(self, message):
-        msg_box = QtWidgets.QMessageBox()
-        msg_box.setText(message)
-        msg_box.setIcon(QtWidgets.QMessageBox.Information)
-        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        result = msg_box.exec_()
-        #if result == QtWidgets.QMessageBox.Ok:
-            #sys.exit()
