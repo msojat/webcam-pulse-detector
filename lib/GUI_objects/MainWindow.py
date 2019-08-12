@@ -6,9 +6,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap, QColor
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QMainWindow
 
-from lib.ImageWindow import ImageWindow
 from lib.PulseApp import PulseApp
-from lib.Ui_Form import Ui_Form
+from lib.GUI_objects.ImageWindow import ImageWindow
+from lib.GUI_objects.Ui_Form import Ui_Form
 
 
 class MainWindow(QMainWindow):

@@ -1,4 +1,4 @@
-from lib.MainWindow import MainWindow
+from lib.GUI_objects.MainWindow import MainWindow
 import sys
 import os
 from os.path import expanduser
