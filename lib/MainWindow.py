@@ -10,26 +10,26 @@ from lib.PulseApp import PulseApp
 from lib.Ui_Form import Ui_Form
 
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
+        self.main_widget = QWidget()
+        self.setCentralWidget(self.main_widget)
+
         # Widget for displaying starting form
         self.form_window = Ui_Form(self.form_ok_callback, self.form_cancel_callback, parent=self)
+        # Widget for displaying camera image
+        self.camera_window = ImageWindow(parent=self)
+        # Widget for displaying images
         self.image_window = ImageWindow(parent=self)
 
         layout = QHBoxLayout()
         layout.addWidget(self.form_window)
-        self.setLayout(layout)
+        self.main_widget.setLayout(layout)
 
         self.pulse_detector = self._create_pulse_detector()
 
-    def form_ok_cllback(self):
-        if self.form_window:
-            self.form_window.set_user()
-            self.open_camera(self.form_window.get_data())
-        else:
-            sys.exit()
         # Change background color to teal
         p = self.palette()
         teal_color = QColor()
@@ -64,20 +64,33 @@ class MainWindow(QWidget):
     def open_camera(self, data):
         self.pulse_detector.setAppData(data)
 
-        self.layout().removeWidget(self.form_window)
-        self.layout().addWidget(self.image_window)
-        while True:
+        self.main_widget.layout().removeWidget(self.form_window)
+        self.form_window.hide()
+        self.main_widget.layout().addWidget(self.camera_window)
             self.pulse_detector.main_loop()
 
             ndarray_image = self.pulse_detector.processor.frame_out
             q_img = self.ndarray_to_qimage(ndarray_image)
-            q_pixmap = QPixmap(q_img)
-            self.image_window.findChild(QLabel, "image_label").setPixmap(q_pixmap)
+            q_pixmap = QPixmap(q_img).scaledToHeight(150, Qt.SmoothTransformation)
+            self.camera_window.findChild(QLabel, "image_label").setPixmap(q_pixmap)
 
     def ndarray_to_qimage(self, ndarray):
         height, width, channel = ndarray.shape
         bytes_per_line = 3 * width
         return QImage(ndarray.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+
+    def keyPressEvent(self, e):
+        """
+        Handling key press
+        """
+        if e.key() == Qt.Key_Escape:
+            self.close_program()
+
+        if e.key() == Qt.Key_S:
+            self.pulse_detector.toggle_search()
+            return
+
+        super(MainWindow, self).keyPressEvent(e)
 
     def close_program(self):
         print "Exiting"
