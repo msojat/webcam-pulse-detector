@@ -156,15 +156,19 @@ class PulseApp(object):
         self.pressed = waitKey(10) & 255  # wait for keypress for 10 ms
         if self.pressed == 27:  # exit program on 'esc'
             print "Exiting"
-            for cam in self.cameras:
-                cam.cam.release()
-            if self.send_serial:
-                self.serial.close()
+            self.close()
             sys.exit()
 
         for key in self.key_controls.keys():
             if chr(self.pressed) == key:
                 self.key_controls[key]()
+
+    def close(self):
+        print "Closing Pulse App"
+        for cam in self.cameras:
+            cam.cam.release()
+        if self.send_serial:
+            self.serial.close()
 
     def main_loop(self):
         """
@@ -175,7 +179,7 @@ class PulseApp(object):
         self.h, self.w, _c = frame.shape
 
         # display unaltered frame
-        # imshow("Original",frame)
+        # imshow("Original", frame)
 
         # set current image frame to the processor's input
         self.processor.frame_in = frame
