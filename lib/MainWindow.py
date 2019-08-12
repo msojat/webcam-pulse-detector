@@ -38,6 +38,11 @@ class MainWindow(QWidget):
         p.setColor(self.foregroundRole(), Qt.white)
         self.setPalette(p)
 
+    def form_ok_callback(self):
+        if self.form_window and self.form_window.check_state(None):
+            if self.form_window.set_user():
+                self.open_camera(self.form_window.get_data())
+
     def form_cancel_callback(self):
         self.close_program()
 
