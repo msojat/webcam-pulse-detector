@@ -1,23 +1,17 @@
-import argparse
 import sys
-import threading
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap, QColor
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QMainWindow
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMainWindow
 
 from lib.GUI_objects.CameraLabel import CameraLabel
 from lib.GUI_objects.ImageWindow import ImageWindow
 from lib.GUI_objects.Ui_Form import Ui_Form
-from lib.PulseApp import PulseApp
 
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
-
-        self.counter = 0
-        self.timer_id = None
 
         # Create main widget for MainWindow
         self.main_widget = QWidget()
@@ -68,29 +62,15 @@ class MainWindow(QMainWindow):
             self.close_program()
 
         if e.key() == Qt.Key_S:
-            self.camera_label.pulse_detector.toggle_search()
-            self.image_widget.restart_shown_images()
-            # Run timer every x milliseconds (30)
-            x = 30000
-            self.timer_id = self.startTimer(x, Qt.VeryCoarseTimer)
+            # self.camera_label.pulse_detector.toggle_search()
+            # Start displaying images
+            self.image_widget.display_images()
             return
 
         super(MainWindow, self).keyPressEvent(e)
 
-    def timerEvent(self, event):
-        if event.timerId() == self.timer_id:
-            if self.counter < 10:
-                self.image_widget.show_relaxing_image()
-            else:
-                self.image_widget.show_disturbing_image()
-
-            if self.counter == 19:
-                self.killTimer(self.timer_id)
-                self.counter = 0
-                print("Timer killed")
-            self.counter = self.counter + 1
-
     def close_program(self):
         print("Exiting")
         self.camera_label.cleanup()
+        self.image_widget.cleanup()
         sys.exit()

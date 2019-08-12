@@ -1,29 +1,19 @@
 import os
 import sys
+import threading
+import time
 from random import randrange
 
 from PyInstaller.compat import FileNotFoundError
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 
 class ImageWindow(QWidget):
     def __init__(self, relaxing_images_dir="images/relaxing", disturbing_images_dir="images/disturbing",
                  parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
-
-        self.relaxing_images_dir = relaxing_images_dir
-        self.disturbing_images_dir = disturbing_images_dir
-        # Get image names and put them in lists
-        try:
-            self.relaxing_images = os.listdir(relaxing_images_dir)
-        except WindowsError:
-            sys.exit("Relaxing folder ({0}) doesn't exist".format(relaxing_images_dir))
-        try:
-            self.disturbing_images = os.listdir(disturbing_images_dir)
-        except WindowsError:
-            sys.exit("Disturbing folder ({0}) doesn't exist".format(disturbing_images_dir))
 
         ###########
         # INIT UI #
@@ -46,9 +36,33 @@ class ImageWindow(QWidget):
 
         self.setLayout(self.h_box)
 
-        ####
-        # TODO: Check comments
-        ####
+        #################################
+        # Init Thread related variables #
+        #################################
+        self.thread_display_images = threading.Thread(target=self._display_images)
+        self.is_running = True
+        self.shown_images_counter = 0
+        # Defined time (in seconds) for image display
+        # and for pause between images
+        self.IMAGE_TIMER = 30
+        self.WAITING_TIMER = 10
+
+        #######################################
+        # Image Directories related variables #
+        #######################################
+        self.relaxing_images_dir = relaxing_images_dir
+        self.disturbing_images_dir = disturbing_images_dir
+
+        # Get image names and put them in lists
+        try:
+            self.relaxing_images = os.listdir(relaxing_images_dir)
+        except WindowsError:
+            sys.exit("Relaxing folder ({0}) doesn't exist".format(relaxing_images_dir))
+        try:
+            self.disturbing_images = os.listdir(disturbing_images_dir)
+        except WindowsError:
+            sys.exit("Disturbing folder ({0}) doesn't exist".format(disturbing_images_dir))
+
         self.shown_images = []
 
     def show_relaxing_image(self):
@@ -71,6 +85,38 @@ class ImageWindow(QWidget):
                          .format(self.disturbing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
         self.shown_images.append(image)
+
+    def _display_images(self):
+        while self.is_running:
+            if self.shown_images_counter < 10:
+                self.show_relaxing_image()
+            else:
+                self.show_disturbing_image()
+
+            if self.shown_images_counter == 19:
+                self.shown_images_counter = 0
+                self.is_running = False
+            self.shown_images_counter += 1
+
+            time.sleep(self.IMAGE_TIMER)
+
+            self.findChild(QLabel, "image_label").clear()
+            time.sleep(self.WAITING_TIMER)
+        print("Image Window thread closing")
+
+    def display_images(self):
+        if not self.thread_display_images.is_alive():
+            self.restart_shown_images()
+            self.shown_images_counter = 0
+
+            self.is_running = True
+            print("Starting Image Window thread")
+            self.thread_display_images.start()
+
+    def cleanup(self):
+        self.is_running = False
+        if self.thread_display_images.is_alive():
+            self.thread_display_images.join()
 
     def restart_shown_images(self):
         self.shown_images = []

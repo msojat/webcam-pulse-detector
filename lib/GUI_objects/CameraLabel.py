@@ -44,7 +44,7 @@ class CameraLabel(QLabel):
         self.thread_pulse_detector.start()
 
     def run_pulse_detector(self):
-        print("Starting thread")
+        print("Starting Camera thread")
         while self.is_running:
             # Take camera image and process it
             self.pulse_detector.main_loop()
