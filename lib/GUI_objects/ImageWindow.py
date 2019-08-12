@@ -2,7 +2,7 @@ import os
 import sys
 from random import randrange
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QColor
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel
 
@@ -77,7 +77,7 @@ class ImageWindow(QWidget):
             sys.exit("Not enough relaxing images in the folder")
 
         image = list_of_availabe_images[randrange(0, len(list_of_availabe_images))]
-        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image))
+        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
 
         self.shown_images.append(image)
