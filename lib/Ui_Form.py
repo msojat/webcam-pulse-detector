@@ -1,15 +1,12 @@
-import argparse
 import json
-import sys
 
 import requests
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QRegExpValidator
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QFormLayout, QHBoxLayout, QVBoxLayout
 
 from constants import constants
-from lib.PulseApp import PulseApp
 
 
 class Ui_Form(QWidget):
@@ -18,7 +15,8 @@ class Ui_Form(QWidget):
 
         self.setObjectName("Form")
         self.resize(485, 364)
-        self.setStyleSheet("QWidget{ background-color: #ffffff; }")
+        # self.setStyleSheet("QWidget{ background-color: #ffffff; }")
+
 
         self.errorColor = '#f6989d'
         self.color = '#ffffff'
@@ -39,73 +37,71 @@ class Ui_Form(QWidget):
 
     def setupUi(self):
         ## Form elements (inputs) init ##
-        self.name = QtWidgets.QLineEdit(self)
-        self.name.setGeometry(QtCore.QRect(180, 50, 181, 21))
+        self.name = QtWidgets.QLineEdit()
         self.name.setText("")
         self.name.setObjectName("name")
         self.name.setMaxLength(45)
 
-        self.name_label = QtWidgets.QLabel(self)
-        self.name_label.setGeometry(QtCore.QRect(110, 50, 60, 16))
-        self.name_label.setObjectName("name_label")
-
-        self.surname = QtWidgets.QLineEdit(self)
-        self.surname.setGeometry(QtCore.QRect(180, 90, 181, 21))
+        self.surname = QtWidgets.QLineEdit()
         self.surname.setText("")
         self.surname.setObjectName("surname")
         self.surname.setMaxLength(45)
 
-        self.surname_label = QtWidgets.QLabel(self)
-        self.surname_label.setGeometry(QtCore.QRect(110, 90, 70, 16))
-        self.surname_label.setObjectName("surname_label")
-
-        self.jmbag = QtWidgets.QLineEdit(self)
-        self.jmbag.setGeometry(QtCore.QRect(180, 130, 181, 21))
+        self.jmbag = QtWidgets.QLineEdit()
         self.jmbag.setText("")
         self.jmbag.setObjectName("jmbag")
         self.jmbag.setMaxLength(10)
 
-        self.jmbag_label = QtWidgets.QLabel(self)
-        self.jmbag_label.setGeometry(QtCore.QRect(110, 130, 60, 16))
-        self.jmbag_label.setObjectName("jmbag_label")
-
-        self.record_num = QtWidgets.QLineEdit(self)
-        self.record_num.setGeometry(QtCore.QRect(260, 170, 101, 21))
+        self.record_num = QtWidgets.QLineEdit()
         self.record_num.setText("5")
         self.record_num.setObjectName("record_num")
         self.record_num.setToolTip("Min 1, max 100")
 
-        self.record_num_label = QtWidgets.QLabel(self)
-        self.record_num_label.setGeometry(QtCore.QRect(110, 170, 131, 16))
-        self.record_num_label.setObjectName("record_num_label")
-
-        self.record_length = QtWidgets.QLineEdit(self)
-        self.record_length.setGeometry(QtCore.QRect(260, 210, 101, 21))
+        self.record_length = QtWidgets.QLineEdit()
         self.record_length.setText("30")
         self.record_length.setPlaceholderText("")
         self.record_length.setObjectName("record_length")
         self.record_length.setToolTip("Min 1, max 60")
 
-        self.record_length_label = QtWidgets.QLabel(self)
-        self.record_length_label.setGeometry(QtCore.QRect(110, 210, 111, 16))
-        self.record_length_label.setObjectName("record_length_label")
-
-        self.required = QtWidgets.QLabel(self)
-        self.required.setGeometry(QtCore.QRect(110, 250, 111, 16))
+        self.required = QtWidgets.QLabel()
         self.required.setObjectName("required")
         self.required.setText("Required *")
         self.required.setStyleSheet("#required { color: #c42033 }")
 
+        # Create Form Layout and put all form elements in it
+        self.form_layout = QFormLayout()
+        self.form_layout.addRow("Name *", self.name)
+        self.form_layout.addRow("Surname *", self.surname)
+        self.form_layout.addRow("JMBAG *", self.jmbag)
+        self.form_layout.addRow("Number of records *", self.record_num)
+        self.form_layout.addRow("Record length *", self.record_length)
+        self.form_layout.addWidget(self.required)
+
+        # Create Buttons
         self.ok_btn = QtWidgets.QPushButton(self)
-        self.ok_btn.setGeometry(QtCore.QRect(250, 280, 113, 32))
         self.ok_btn.setObjectName("ok_btn")
+        self.ok_btn.setText("Ok")
 
         self.cancel_btn = QtWidgets.QPushButton(self)
-        self.cancel_btn.setGeometry(QtCore.QRect(110, 280, 113, 32))
         self.cancel_btn.setObjectName("cancel_btn")
+        self.cancel_btn.setText("Cancel")
 
-        self.retranslateUi(self)
-        QtCore.QMetaObject.connectSlotsByName(self)
+        # Set buttons in Horizontal Box
+        # (it could be possible to use popup instead of QWidget so buttons are ordered according to os)
+        self.h_box_layout = QHBoxLayout()
+        self.h_box_layout.addWidget(self.cancel_btn)
+        self.h_box_layout.addWidget(self.ok_btn)
+
+        # Set Buttons under Form Layout
+        self.v_box_layout = QVBoxLayout()
+        self.v_box_layout.addLayout(self.form_layout)
+        self.v_box_layout.addLayout(self.h_box_layout)
+
+        # Set main layout (to Ui_Form - QWidget)
+        self.setLayout(self.v_box_layout)
+
+        # Translate UI
+        # self.retranslateUi(self)
 
         # Set Input Validators
         numberValidator = QRegExpValidator(QRegExp("\d+"))
