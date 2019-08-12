@@ -16,15 +16,16 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
+        # Create main widget for MainWindow
         self.main_widget = QWidget()
         self.setCentralWidget(self.main_widget)
 
+        # Widget for displaying starting form
+        self.form_window = Ui_Form(self.form_ok_callback, self.form_cancel_callback)
         # Widget for displaying camera image
         self.camera_label = CameraLabel()
-        # Widget for displaying starting form
-        self.form_window = Ui_Form(self.form_ok_callback, self.form_cancel_callback, parent=self)
         # Widget for displaying images
-        self.image_window = ImageWindow(parent=self)
+        self.image_widget = ImageWindow()
 
         layout = QHBoxLayout()
         layout.addWidget(self.form_window)
@@ -47,6 +48,9 @@ class MainWindow(QMainWindow):
                 self.main_widget.layout().removeWidget(self.form_window)
                 self.form_window.hide()
                 self.main_widget.layout().addWidget(self.camera_label)
+                self.main_widget.layout().addWidget(self.image_widget)
+
+                self.image_widget.show_relaxing_image()
 
                 self.camera_label.open_camera(self.form_window.get_data())
 
@@ -58,15 +62,15 @@ class MainWindow(QMainWindow):
         Handling key press
         """
         if e.key() == Qt.Key_Escape:
-            self.camera_label.cleanup()
             self.close_program()
 
         if e.key() == Qt.Key_S:
-            self.pulse_detector.toggle_search()
+            self.camera_label.pulse_detector.toggle_search()
             return
 
         super(MainWindow, self).keyPressEvent(e)
 
     def close_program(self):
         print("Exiting")
+        self.camera_label.cleanup()
         sys.exit()
