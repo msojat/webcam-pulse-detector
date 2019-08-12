@@ -191,8 +191,8 @@ class PulseApp(object):
         # collect the output frame for display
         output_frame = self.processor.frame_out
 
-        # show the processed/annotated output frame
-        imshow("Processed", output_frame)
+        # show the processed/annotated output frame using cv2
+        # imshow("Processed", output_frame)
 
         # create and/or update the raw data display if needed
         if self.bpm_plot:
@@ -205,7 +205,7 @@ class PulseApp(object):
             self.sock.sendto(str(self.processor.bpm), self.udp)
 
         # handle any key presses
-        self.key_handler()
+        # self.key_handler()
 
     def upload_measurements(self):
         url = "{0}{1}".format(constants.BASE_URL, "add_record")

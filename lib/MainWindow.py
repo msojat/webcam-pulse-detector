@@ -1,9 +1,10 @@
 import argparse
 import sys
+import threading
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PyQt5.QtGui import QImage, QPixmap, QColor
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QMainWindow
 
 from lib.ImageWindow import ImageWindow
 from lib.PulseApp import PulseApp
@@ -13,6 +14,9 @@ from lib.Ui_Form import Ui_Form
 class MainWindow(QMainWindow):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
+
+        self.is_running = True
+        self.thread_pulse_detector = None
 
         self.main_widget = QWidget()
         self.setCentralWidget(self.main_widget)
@@ -67,12 +71,22 @@ class MainWindow(QMainWindow):
         self.main_widget.layout().removeWidget(self.form_window)
         self.form_window.hide()
         self.main_widget.layout().addWidget(self.camera_window)
+
+        self.is_running = True
+        self.thread_pulse_detector = threading.Thread(target=self.run_pulse_detector)
+        self.thread_pulse_detector.start()
+
+    def run_pulse_detector(self):
+
+        while self.is_running:
             self.pulse_detector.main_loop()
 
             ndarray_image = self.pulse_detector.processor.frame_out
             q_img = self.ndarray_to_qimage(ndarray_image)
             q_pixmap = QPixmap(q_img).scaledToHeight(150, Qt.SmoothTransformation)
             self.camera_window.findChild(QLabel, "image_label").setPixmap(q_pixmap)
+
+        print("Closing thread")
 
     def ndarray_to_qimage(self, ndarray):
         height, width, channel = ndarray.shape
