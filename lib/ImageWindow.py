@@ -28,6 +28,7 @@ class ImageWindow(QWidget):
         # INIT UI #
         ###########
         # Define color palette
+        # Change background color to teal
         p = self.palette()
         teal_color = QColor()
         teal_color.setRgb(0, 128, 128)

@@ -29,6 +29,13 @@ class MainWindow(QWidget):
             self.open_camera(self.form_window.get_data())
         else:
             sys.exit()
+        # Change background color to teal
+        p = self.palette()
+        teal_color = QColor()
+        teal_color.setRgb(0, 128, 128)
+        p.setColor(self.backgroundRole(), teal_color)
+        p.setColor(self.foregroundRole(), Qt.white)
+        self.setPalette(p)
 
     def _create_pulse_detector(self):
         parser = argparse.ArgumentParser(description='Webcam pulse detector.')
