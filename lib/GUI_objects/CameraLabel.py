@@ -58,15 +58,17 @@ class CameraLabel(QLabel):
         bytes_per_line = 3 * width
         return QImage(ndarray.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
 
-    def closeEvent(self, event):
-        print("Closing Camera Label")
+    def cleanup(self):
+        print("Cleaning up Camera Label")
         # Stop loop in Pulse Detector thread
         self.is_running = False
         if self.thread_pulse_detector is not None:
             # Wait for thread to join (stop)
             self.thread_pulse_detector.join()
+            print("Waiting for thread to join")
+        print("Thread joined...")
         # Cleanup Pulse Detector
+        print("Closing Pulse App")
         self.pulse_detector.close()
 
-        # Call super class in case it needs to be cleaned up
-        super(CameraLabel, self).closeEvent(event)
+        print("Cleaning done")
