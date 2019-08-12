@@ -16,6 +16,9 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
+        self.counter = 0
+        self.timer_id = None
+
         # Create main widget for MainWindow
         self.main_widget = QWidget()
         self.setCentralWidget(self.main_widget)
@@ -66,9 +69,26 @@ class MainWindow(QMainWindow):
 
         if e.key() == Qt.Key_S:
             self.camera_label.pulse_detector.toggle_search()
+            self.image_widget.restart_shown_images()
+            # Run timer every x milliseconds (30)
+            x = 30000
+            self.timer_id = self.startTimer(x, Qt.VeryCoarseTimer)
             return
 
         super(MainWindow, self).keyPressEvent(e)
+
+    def timerEvent(self, event):
+        if event.timerId() == self.timer_id:
+            if self.counter < 10:
+                self.image_widget.show_relaxing_image()
+            else:
+                self.image_widget.show_disturbing_image()
+
+            if self.counter == 19:
+                self.killTimer(self.timer_id)
+                self.counter = 0
+                print("Timer killed")
+            self.counter = self.counter + 1
 
     def close_program(self):
         print("Exiting")

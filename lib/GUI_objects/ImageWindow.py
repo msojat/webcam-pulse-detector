@@ -59,7 +59,6 @@ class ImageWindow(QWidget):
         image = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
-
         self.shown_images.append(image)
 
     def show_disturbing_image(self):
@@ -68,9 +67,9 @@ class ImageWindow(QWidget):
             raise FileNotFoundError("Not enough disturbing images in the folder")
 
         image = list_of_available_images[randrange(0, len(list_of_available_images))]
-        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+        pixmap = QPixmap('{0}/{1}'
+                         .format(self.disturbing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
-
         self.shown_images.append(image)
 
     def restart_shown_images(self):
