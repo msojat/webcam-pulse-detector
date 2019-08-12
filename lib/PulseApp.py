@@ -164,7 +164,7 @@ class PulseApp(object):
                 self.key_controls[key]()
 
     def close(self):
-        print "Closing Pulse App"
+        print("Closing Pulse App")
         for cam in self.cameras:
             cam.cam.release()
         if self.send_serial:
