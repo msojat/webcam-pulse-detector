@@ -14,7 +14,8 @@ class MainWindow(QWidget):
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
-        self.form_window = Ui_Form(self.form_ok_cllback, parent=self)
+        # Widget for displaying starting form
+        self.form_window = Ui_Form(self.form_ok_callback, self.form_cancel_callback, parent=self)
         self.image_window = ImageWindow(parent=self)
 
         layout = QHBoxLayout()
@@ -36,6 +37,9 @@ class MainWindow(QWidget):
         p.setColor(self.backgroundRole(), teal_color)
         p.setColor(self.foregroundRole(), Qt.white)
         self.setPalette(p)
+
+    def form_cancel_callback(self):
+        self.close_program()
 
     def _create_pulse_detector(self):
         parser = argparse.ArgumentParser(description='Webcam pulse detector.')
@@ -69,3 +73,11 @@ class MainWindow(QWidget):
         height, width, channel = ndarray.shape
         bytes_per_line = 3 * width
         return QImage(ndarray.data, width, height, bytes_per_line, QImage.Format_RGB888).rgbSwapped()
+
+    def close_program(self):
+        print "Exiting"
+        self.is_running = False
+        if self.thread_pulse_detector is not None:
+            self.thread_pulse_detector.join()
+        self.pulse_detector.close()
+        sys.exit()

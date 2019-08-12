@@ -13,7 +13,7 @@ from lib.PulseApp import PulseApp
 
 
 class Ui_Form(QWidget):
-    def __init__(self, ok_button_callback, parent=None, Qt_WindowFlags_flags=Qt.Widget):
+    def __init__(self, ok_button_callback, cancel_button_callback, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(Ui_Form, self).__init__(parent, Qt_WindowFlags_flags)
 
         self.setObjectName("Form")
@@ -35,7 +35,7 @@ class Ui_Form(QWidget):
 
         # Connect ui parts (associate click listeners)
         self.ok_btn.clicked.connect(ok_button_callback)
-        self.cancel_btn.clicked.connect(self.cancel_btn_click)
+        self.cancel_btn.clicked.connect(cancel_button_callback)
 
     def setupUi(self):
         ## Form elements (inputs) init ##
@@ -232,9 +232,6 @@ class Ui_Form(QWidget):
 
     def get_data(self):
         return self.data
-
-    def cancel_btn_click(self):
-        sys.exit()
 
     def showMessageBox(self, message):
         msg_box = QtWidgets.QMessageBox()
