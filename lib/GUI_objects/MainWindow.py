@@ -50,6 +50,10 @@ class MainWindow(QMainWindow):
                 self.image_widget.show_relaxing_image()
 
                 self.camera_label.open_camera(self.form_window.get_data())
+                self.camera_label.measurement_signal.connect(self.measurement_slot)
+
+    def measurement_slot(self):
+        print("measurement signal caught by measurement_slot in MainWindow")
 
     def form_cancel_callback(self):
         self.close_program()

@@ -6,6 +6,7 @@ import time
 import numpy as np
 import requests
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QObject, pyqtSignal
 from serial import Serial
 
 from constants import constants
@@ -14,7 +15,7 @@ from lib.interface import destroyWindow, moveWindow, plotXY, waitKey, imshow
 from lib.processors_noopenmdao import findFaceGetPulse
 
 
-class PulseApp(object):
+class PulseApp(QObject):
     """
     Python application that finds a face in a webcam stream, then isolates the
     forehead.
@@ -23,7 +24,10 @@ class PulseApp(object):
     over time, and the detected person's pulse is estimated.
     """
 
-    def __init__(self, args):
+    measurement_signal = pyqtSignal()
+
+    def __init__(self, args, parent=None):
+        super(PulseApp, self).__init__(parent=parent)
         # Imaging device - must be a connected camera (not an ip camera or mjpeg
         # stream)
         serial = args.serial
@@ -174,6 +178,7 @@ class PulseApp(object):
         """
         Single iteration of the application's main loop.
         """
+        self.measurement_signal.emit()
         # Get current image frame from the camera
         frame = self.cameras[self.selected_cam].get_frame()
         self.h, self.w, _c = frame.shape

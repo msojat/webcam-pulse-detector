@@ -16,6 +16,7 @@ class CameraLabel(QLabel):
         self.is_running = True
         self.thread_pulse_detector = None
         self.pulse_detector = None
+        self.measurement_signal = None
 
         self.scale_image_down = False
         self.image_width_minimum = 400
@@ -32,7 +33,9 @@ class CameraLabel(QLabel):
 
         args = parser.parse_args()
         if self.pulse_detector is None:
-            return PulseApp(args)
+            pulse_detector = PulseApp(args)
+            self.measurement_signal = pulse_detector.measurement_signal
+            return pulse_detector
         else:
             return self.pulse_detector
 
