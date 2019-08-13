@@ -183,9 +183,6 @@ class PulseApp(QObject):
         frame = self.cameras[self.selected_cam].get_frame()
         self.h, self.w, _c = frame.shape
 
-        # display unaltered frame
-        # imshow("Original", frame)
-
         # set current image frame to the processor's input
         self.processor.frame_in = frame
         # process the image frame to perform all needed analysis
@@ -193,11 +190,7 @@ class PulseApp(QObject):
         if self.processor.time_gap is not None and self.processor.time_gap <= 0:
             self.upload_measurements()
             self.processor.time_gap = None
-        # collect the output frame for display
-        output_frame = self.processor.frame_out
-
-        # show the processed/annotated output frame using cv2
-        # imshow("Processed", output_frame)
+        # self.processor.frame_out is accessed directly for display
 
         # create and/or update the raw data display if needed
         if self.bpm_plot:
@@ -208,9 +201,6 @@ class PulseApp(QObject):
 
         if self.send_udp:
             self.sock.sendto(str(self.processor.bpm), self.udp)
-
-        # handle any key presses
-        # self.key_handler()
 
     def upload_measurements(self):
         url = "{0}{1}".format(constants.BASE_URL, "add_record")
@@ -252,12 +242,3 @@ class PulseApp(QObject):
     def get_formatted_time(self, time_seconds):
         FMT = "%Y-%m-%d %H:%M:%S"
         return time.strftime(FMT, time.gmtime(time_seconds))
-
-    def showMessageBox(self, message):
-        msg_box = QtWidgets.QMessageBox()
-        msg_box.setText(message)
-        msg_box.setIcon(QtWidgets.QMessageBox.Information)
-        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
-        result = msg_box.exec_()
-        #if result == QtWidgets.QMessageBox.Ok:
-            #sys.exit()
