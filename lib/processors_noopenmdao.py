@@ -35,6 +35,8 @@ class findFaceGetPulse(object):
         self.t0 = time.time()
         self.bpms = []
         self.bpm = 0
+
+        self.external_data_buffer = None
         dpath = resource_path("haarcascade_frontalface_alt.xml")
         if not os.path.exists(dpath):
             print "Cascade file not present!"
@@ -182,7 +184,7 @@ class findFaceGetPulse(object):
         self.data_buffer.append(vals)
         L = len(self.data_buffer)
         # If Data Buffer length is greater than
-        # specified size, discard oldest measurements
+        # specified Buffer size, discard oldest measurements
         if L > self.buffer_size:
             self.data_buffer = self.data_buffer[-self.buffer_size:]
             self.times = self.times[-self.buffer_size:]
@@ -237,6 +239,9 @@ class findFaceGetPulse(object):
             col = (100, 255, 100)
             # get remaining time
             self.time_gap = self.end_time - self.get_current_time()
+
+            if self.external_data_buffer is not None:
+                self.external_data_buffer.append(self.bpm)
 
             self.heart_rates.append(self.bpm)
 
