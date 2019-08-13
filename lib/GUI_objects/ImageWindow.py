@@ -64,27 +64,30 @@ class ImageWindow(QWidget):
             sys.exit("Disturbing folder ({0}) doesn't exist".format(disturbing_images_dir))
 
         self.shown_images = []
+        self.current_showing_image = None
 
     def show_relaxing_image(self):
-        list_of_available_images = [image for image in self.relaxing_images if image not in self.shown_images]
+        list_of_available_images = [image_name for image_name in self.relaxing_images if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
             raise FileNotFoundError("Not enough relaxing images in the folder")
 
-        image = list_of_available_images[randrange(0, len(list_of_available_images))]
-        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+        image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
+        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
-        self.shown_images.append(image)
+        self.shown_images.append(image_name)
+        self.current_showing_image = image_name
 
     def show_disturbing_image(self):
-        list_of_available_images = [image for image in self.disturbing_images if image not in self.shown_images]
+        list_of_available_images = [image_name for image_name in self.disturbing_images if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
             raise FileNotFoundError("Not enough disturbing images in the folder")
 
-        image = list_of_available_images[randrange(0, len(list_of_available_images))]
+        image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'
-                         .format(self.disturbing_images_dir, image)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+                         .format(self.disturbing_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
-        self.shown_images.append(image)
+        self.shown_images.append(image_name)
+        self.current_showing_image = image_name
 
     def _display_images(self):
         while self.is_running:
@@ -101,13 +104,13 @@ class ImageWindow(QWidget):
             time.sleep(self.IMAGE_TIMER)
 
             self.findChild(QLabel, "image_label").clear()
+            self.current_showing_image = None
             time.sleep(self.WAITING_TIMER)
         print("Image Window thread closing")
 
     def display_images(self):
         if not self.thread_display_images.is_alive():
             self.restart_shown_images()
-            self.shown_images_counter = 0
 
             self.is_running = True
             print("Starting Image Window thread")
@@ -119,4 +122,5 @@ class ImageWindow(QWidget):
             self.thread_display_images.join()
 
     def restart_shown_images(self):
+        self.shown_images_counter = 0
         self.shown_images = []
