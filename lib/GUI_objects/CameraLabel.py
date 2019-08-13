@@ -77,7 +77,7 @@ class CameraLabel(QLabel):
         print("Cleaning up Camera Label")
         # Stop loop in Pulse Detector thread
         self.is_running = False
-        if self.thread_pulse_detector is not None:
+        if self.thread_pulse_detector is not None and self.thread_pulse_detector.is_alive():
             # Wait for thread to join (stop)
             print("Waiting for thread to join")
             self.thread_pulse_detector.join()

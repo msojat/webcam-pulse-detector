@@ -90,7 +90,10 @@ class ImageWindow(QWidget):
         self.current_showing_image = image_name
 
     def _display_images(self):
+        # While is_running flag is True, show and hide images
         while self.is_running:
+            # Show 10 relaxing then 10 disturbing images
+            # Every image is shown for self.IMAGE_TIMER (default 30) seconds
             if self.shown_images_counter < 10:
                 self.show_relaxing_image()
             else:
@@ -100,13 +103,31 @@ class ImageWindow(QWidget):
                 self.shown_images_counter = 0
                 self.is_running = False
             self.shown_images_counter += 1
+            self.lazy_sleep(self.IMAGE_TIMER)
 
-            time.sleep(self.IMAGE_TIMER)
-
+            # After the image is shown for specified duration,
+            # clear it from the label and wait for self.WAITING_TIMER (default 10) seconds
             self.findChild(QLabel, "image_label").clear()
             self.current_showing_image = None
-            time.sleep(self.WAITING_TIMER)
+
+            self.lazy_sleep(self.WAITING_TIMER)
+
         print("Image Window thread closing")
+
+    def lazy_sleep(self, sleep_time):
+        """
+        Function used to break sleep in segments of maximum 2s.
+        Used to gracefully close application.
+        """
+        MAX_SLEEP_DURATION = 2
+        while sleep_time > MAX_SLEEP_DURATION:
+            if not self.is_running:
+                return
+            time.sleep(MAX_SLEEP_DURATION)
+            sleep_time = sleep_time - MAX_SLEEP_DURATION
+        if not self.is_running:
+            return
+        time.sleep(sleep_time)
 
     def display_images(self):
         if not self.thread_display_images.is_alive():
@@ -120,6 +141,7 @@ class ImageWindow(QWidget):
         self.is_running = False
         if self.thread_display_images.is_alive():
             self.thread_display_images.join()
+        print("Cleared Image Window")
 
     def restart_shown_images(self):
         self.shown_images_counter = 0
