@@ -47,7 +47,6 @@ class CameraLabel(QLabel):
         self.thread_pulse_detector.start()
 
     def run_pulse_detector(self):
-        print("Starting Camera thread")
         while self.is_running:
             # Take camera image and process it
             self.pulse_detector.main_loop()
@@ -60,8 +59,6 @@ class CameraLabel(QLabel):
             else:
                 q_pixmap = QPixmap(q_img).scaledToWidth(self.image_width_normal, Qt.SmoothTransformation)
             self.setPixmap(q_pixmap)
-
-        print("Stopping thread")
 
     def ndarray_to_qimage(self, ndarray):
         height, width, channel = ndarray.shape
@@ -77,8 +74,8 @@ class CameraLabel(QLabel):
     def stop_measuring(self):
         self.pulse_detector.stop_measuring()
 
-    def get_n_measurements(self, n):
-        return self.pulse_detector.get_n_measurements(n)
+    def get_measurement(self):
+        return self.pulse_detector.get_measurement()
 
     def cleanup(self):
         """
@@ -86,16 +83,12 @@ class CameraLabel(QLabel):
 
         !!! Has to be called !!!
         """
-        print("Cleaning up Camera Label")
         # Stop loop in Pulse Detector thread
         self.is_running = False
         if self.thread_pulse_detector is not None and self.thread_pulse_detector.is_alive():
             # Wait for thread to join (stop)
-            print("Waiting for thread to join")
             self.thread_pulse_detector.join()
-            print("Thread joined...")
         # Cleanup Pulse Detector
         if self.pulse_detector is not None:
             self.pulse_detector.close()
-
-        print("Camera Label Cleaning done")
+        print("Cleared Camera Label")

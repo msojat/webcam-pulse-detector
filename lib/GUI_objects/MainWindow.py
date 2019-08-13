@@ -1,4 +1,5 @@
 import sys
+import time
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
@@ -37,6 +38,8 @@ class MainWindow(QMainWindow):
         p.setColor(self.foregroundRole(), Qt.white)
         self.setPalette(p)
 
+        self.bpm_array = []
+
     def form_ok_callback(self):
         if self.form_window and self.form_window.check_state(None):
             if self.form_window.set_user():
@@ -53,8 +56,13 @@ class MainWindow(QMainWindow):
                 self.camera_label.measurement_signal.connect(self.measurement_slot)
 
     def measurement_slot(self):
-        print("measurement signal caught by measurement_slot in MainWindow")
-        print(self.camera_label.get_n_measurements(255))
+        # TODO: Add Measurement, time and image name/id to list
+        #  Send measurements data to server
+        if self.image_widget.current_showing_image is not None:
+            single_measurement = {"value": self.camera_label.get_measurement(),
+                                  "time": time.time(),
+                                  "image": self.image_widget.current_showing_image}
+            print(single_measurement)
 
     def form_cancel_callback(self):
         self.close_program()

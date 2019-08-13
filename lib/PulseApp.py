@@ -5,7 +5,6 @@ import time
 
 import numpy as np
 import requests
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import QObject, pyqtSignal
 from serial import Serial
 
@@ -29,7 +28,7 @@ class PulseApp(QObject):
     def __init__(self, args, parent=None):
         super(PulseApp, self).__init__(parent=parent)
 
-        self.bpm_array = []
+        self.bpm = 0
 
         # Imaging device - must be a connected camera (not an ip camera or mjpeg
         # stream)
@@ -81,8 +80,6 @@ class PulseApp(QObject):
                                           data_spike_limit=2500.,
                                           face_detector_smoothness=10.)
 
-        self.processor.external_data_buffer = self.bpm_array
-
         # Init parameters for the cardiac data plot
         self.bpm_plot = False
         self.plot_title = "Data display - raw signal (top) and PSD (bottom)"
@@ -131,6 +128,7 @@ class PulseApp(QObject):
 
     def stop_measuring(self):
         self.processor.find_faces = True
+        self.processor.bpm = 0
         if self.processor.is_success:
             self.processor.counter += 1
             self.processor.is_success = False
@@ -185,18 +183,15 @@ class PulseApp(QObject):
             if chr(self.pressed) == key:
                 self.key_controls[key]()
 
-    def close(self):
-        print("Closing Pulse App")
-        for cam in self.cameras:
-            cam.cam.release()
-        if self.send_serial:
-            self.serial.close()
-
     def main_loop(self):
         """
         Single iteration of the application's main loop.
         """
-        # Get current image frame from the camera
+
+        #################
+        # Image Process #
+        #################
+        # Get next image frame from the camera
         frame = self.cameras[self.selected_cam].get_frame()
         self.h, self.w, _c = frame.shape
 
@@ -204,15 +199,26 @@ class PulseApp(QObject):
         self.processor.frame_in = frame
         # process the image frame to perform all needed analysis
         self.processor.run(self.selected_cam)
+        # self.processor.frame_out is accessed directly for displaying
 
-        if len(self.bpm_array) > 255:
+        ################
+        # Data Process #
+        ################
+        if self.processor.bpm != 0:
+            self.bpm = self.processor.bpm
             self.measurement_signal.emit()
 
+        """
+        # Record length condition checking
+        
         if self.processor.time_gap is not None and self.processor.time_gap <= 0:
             self.upload_measurements()
             self.processor.time_gap = None
-        # self.processor.frame_out is accessed directly for display
+        """
 
+        ###############
+        # Unused Part #
+        ###############
         # create and/or update the raw data display if needed
         if self.bpm_plot:
             self.make_bpm_plot()
@@ -256,10 +262,8 @@ class PulseApp(QObject):
         except Exception as err:
             print err.message
 
-    def get_n_measurements(self, n):
-        return_array = self.bpm_array[:n]
-        self.bpm_array = self.bpm_array[n:]
-        return return_array
+    def get_measurement(self):
+        return self.bpm
 
     def setAppData(self, data):
         self.data = data
@@ -268,3 +272,10 @@ class PulseApp(QObject):
     def get_formatted_time(self, time_seconds):
         FMT = "%Y-%m-%d %H:%M:%S"
         return time.strftime(FMT, time.gmtime(time_seconds))
+
+    def close(self):
+        for cam in self.cameras:
+            cam.cam.release()
+        if self.send_serial:
+            self.serial.close()
+        print("Closed Pulse App")

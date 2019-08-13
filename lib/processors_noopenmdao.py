@@ -36,7 +36,6 @@ class findFaceGetPulse(object):
         self.bpms = []
         self.bpm = 0
 
-        self.external_data_buffer = None
         dpath = resource_path("haarcascade_frontalface_alt.xml")
         if not os.path.exists(dpath):
             print "Cascade file not present!"
@@ -140,118 +139,126 @@ class findFaceGetPulse(object):
 
         # if not measuring
         if self.find_faces:
-            cv2.putText(self.frame_out, "Press 'S' to lock face and begin", (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            cv2.putText(self.frame_out, "Press 'Esc' to quit", (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
-            self.data_buffer, self.times, self.trained = [], [], False
-            detected = list(self.face_cascade.detectMultiScale(self.gray,
-                                                               scaleFactor=1.3,
-                                                               minNeighbors=4,
-                                                               minSize=(
-                                                                   50, 50),
-                                                               flags=cv2.CASCADE_SCALE_IMAGE))
-
-            if len(detected) > 0:
-                detected.sort(key=lambda a: a[-1] * a[-2])
-
-                if self.shift(detected[-1]) > 10:
-                    self.face_rect = detected[-1]
-            forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
-            self.draw_rect(self.face_rect, col=(255, 0, 0))
-            x, y, w, h = self.face_rect
-            cv2.putText(self.frame_out, "Face",
-                        (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-            self.draw_rect(forehead1)
-            x, y, w, h = forehead1
-            cv2.putText(self.frame_out, "Forehead",
-                        (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            self.detect_face()
             return
-        if set(self.face_rect) == set([1, 1, 2, 2]):
+        elif set(self.face_rect) == set([1, 1, 2, 2]):
             return
         # else: -> While measuring
-        cv2.putText(
-            self.frame_out, "Press 'S' to restart",
-            (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-        cv2.putText(self.frame_out, "Records: {0} / {1}".format(self.counter, self.data[u"number_of_records"]),
-                    (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
-        cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                    (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+        else:
+            cv2.putText(
+                self.frame_out, "Press 'A' to stop",
+                (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            # cv2.putText(self.frame_out, "Records: {0} / {1}".format(self.counter, self.data[u"number_of_records"]),
+            #            (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            cv2.putText(self.frame_out, "Press 'Esc' to quit",
+                        (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
 
+            forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
+            self.draw_rect(forehead1)
+
+            vals = self.get_subface_means(forehead1)
+
+            self.data_buffer.append(vals)
+            L = len(self.data_buffer)
+            # If Data Buffer length is greater than
+            # specified Buffer size, discard oldest measurements
+            if L > self.buffer_size:
+                self.data_buffer = self.data_buffer[-self.buffer_size:]
+                self.times = self.times[-self.buffer_size:]
+                L = self.buffer_size
+
+            processed = np.array(self.data_buffer)
+            # self.samples are used for make_bpm_plot and write_csv
+            self.samples = processed
+            # If there are more than 10 measurements, calculate bpm
+            if L > 10:
+                self.output_dim = processed.shape[0]
+
+                self.fps = float(L) / (self.times[-1] - self.times[0])
+                even_times = np.linspace(self.times[0], self.times[-1], L)
+                interpolated = np.interp(even_times, self.times, processed)
+                interpolated = np.hamming(L) * interpolated
+                interpolated = interpolated - np.mean(interpolated)
+                raw = np.fft.rfft(interpolated)
+                phase = np.angle(raw)
+                self.fft = np.abs(raw)
+                self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
+                freqs = 60. * self.freqs
+                idx = np.where((freqs > 50) & (freqs < 180))
+
+                pruned = self.fft[idx]
+                phase = phase[idx]
+
+                pfreq = freqs[idx]
+                self.freqs = pfreq
+                self.fft = pruned
+                if pruned.any():
+                    idx2 = np.argmax(pruned)
+                else:
+                    return
+
+                t = (np.sin(phase[idx2]) + 1.) / 2.
+                t = 0.9 * t + 0.1
+                alpha = t
+                beta = 1 - t
+
+                self.bpm = self.freqs[idx2]
+                self.idx += 1
+
+                x, y, w, h = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
+                r = alpha * self.frame_in[y:y + h, x:x + w, 0]
+                g = alpha * \
+                    self.frame_in[y:y + h, x:x + w, 1] + \
+                    beta * self.gray[y:y + h, x:x + w]
+                b = alpha * self.frame_in[y:y + h, x:x + w, 2]
+                self.frame_out[y:y + h, x:x + w] = cv2.merge([r, g, b])
+                x1, y1, w1, h1 = self.face_rect
+                self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
+
+                #######################################################################################
+
+                # get time gap to data[u"record_length"]
+                self.time_gap = self.end_time - self.get_current_time()
+
+                # TODO: Temp fix, TO decide what to do with it
+                self.time_gap = 0
+
+                self.heart_rates.append(self.bpm)
+
+                if self.time_gap:
+                    text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, self.time_gap)
+                else:
+                    text = "(estimate: %0.1f bpm)" % (self.bpm)
+                cv2.putText(self.frame_out, text,
+                            (x - w / 2, y), cv2.FONT_HERSHEY_PLAIN, 1, col)
+
+    def detect_face(self):
+        col = (100, 255, 100)
+
+        cv2.putText(self.frame_out, "Press 'S' to lock face and begin", (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+        cv2.putText(self.frame_out, "Press 'Esc' to quit", (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+        self.data_buffer, self.times, self.trained = [], [], False
+        detected = list(self.face_cascade.detectMultiScale(self.gray,
+                                                           scaleFactor=1.3,
+                                                           minNeighbors=4,
+                                                           minSize=(
+                                                               50, 50),
+                                                           flags=cv2.CASCADE_SCALE_IMAGE))
+
+        if len(detected) > 0:
+            detected.sort(key=lambda a: a[-1] * a[-2])
+
+            if self.shift(detected[-1]) > 10:
+                self.face_rect = detected[-1]
         forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
+        self.draw_rect(self.face_rect, col=(255, 0, 0))
+        x, y, w, h = self.face_rect
+        cv2.putText(self.frame_out, "Face",
+                    (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
         self.draw_rect(forehead1)
-
-        vals = self.get_subface_means(forehead1)
-
-        self.data_buffer.append(vals)
-        L = len(self.data_buffer)
-        # If Data Buffer length is greater than
-        # specified Buffer size, discard oldest measurements
-        if L > self.buffer_size:
-            self.data_buffer = self.data_buffer[-self.buffer_size:]
-            self.times = self.times[-self.buffer_size:]
-            L = self.buffer_size
-
-        processed = np.array(self.data_buffer)
-        self.samples = processed
-        # If there are more than 10 measurements, calculate bpm
-        if L > 10:
-            self.output_dim = processed.shape[0]
-
-            self.fps = float(L) / (self.times[-1] - self.times[0])
-            even_times = np.linspace(self.times[0], self.times[-1], L)
-            interpolated = np.interp(even_times, self.times, processed)
-            interpolated = np.hamming(L) * interpolated
-            interpolated = interpolated - np.mean(interpolated)
-            raw = np.fft.rfft(interpolated)
-            phase = np.angle(raw)
-            self.fft = np.abs(raw)
-            self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
-            freqs = 60. * self.freqs
-            idx = np.where((freqs > 50) & (freqs < 180))
-
-            pruned = self.fft[idx]
-            phase = phase[idx]
-
-            pfreq = freqs[idx]
-            self.freqs = pfreq
-            self.fft = pruned
-            if pruned.any():
-                idx2 = np.argmax(pruned)
-            else:
-                return
-
-            t = (np.sin(phase[idx2]) + 1.) / 2.
-            t = 0.9 * t + 0.1
-            alpha = t
-            beta = 1 - t
-
-            self.bpm = self.freqs[idx2]
-            self.idx += 1
-
-            x, y, w, h = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
-            r = alpha * self.frame_in[y:y + h, x:x + w, 0]
-            g = alpha * \
-                self.frame_in[y:y + h, x:x + w, 1] + \
-                beta * self.gray[y:y + h, x:x + w]
-            b = alpha * self.frame_in[y:y + h, x:x + w, 2]
-            self.frame_out[y:y + h, x:x + w] = cv2.merge([r, g, b])
-            x1, y1, w1, h1 = self.face_rect
-            self.slices = [np.copy(self.frame_out[y1:y1 + h1, x1:x1 + w1, 1])]
-            col = (100, 255, 100)
-            # get remaining time
-            self.time_gap = self.end_time - self.get_current_time()
-
-            if self.external_data_buffer is not None:
-                self.external_data_buffer.append(self.bpm)
-
-            self.heart_rates.append(self.bpm)
-
-            if self.time_gap:
-                text = "(estimate: %0.1f bpm, wait %0.0f s)" % (self.bpm, self.time_gap)
-            else:
-                text = "(estimate: %0.1f bpm)" % (self.bpm)
-            tsize = 1
-            cv2.putText(self.frame_out, text,
-                        (x - w / 2, y), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+        x, y, w, h = forehead1
+        cv2.putText(self.frame_out, "Forehead",
+                    (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
 
     def get_current_time(self):
         year = datetime.now().timetuple().tm_year

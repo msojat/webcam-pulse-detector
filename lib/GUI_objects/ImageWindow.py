@@ -112,8 +112,6 @@ class ImageWindow(QWidget):
 
             self.lazy_sleep(self.WAITING_TIMER)
 
-        print("Image Window thread closing")
-
     def lazy_sleep(self, sleep_time):
         """
         Function used to break sleep in segments of maximum 2s.
