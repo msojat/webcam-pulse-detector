@@ -4,13 +4,12 @@ import sys
 import time
 
 import numpy as np
-import requests
 from PyQt5.QtCore import QObject, pyqtSignal
 from serial import Serial
 
-from constants import constants
 from lib.device import Camera
-from lib.interface import destroyWindow, moveWindow, plotXY, waitKey, imshow
+from lib.interface import destroyWindow, moveWindow, plotXY, waitKey
+from lib.network.NetworkHelper import NetworkHelper
 from lib.processors_noopenmdao import findFaceGetPulse
 
 
@@ -230,37 +229,26 @@ class PulseApp(QObject):
             self.sock.sendto(str(self.processor.bpm), self.udp)
 
     def upload_measurements(self):
-        url = "{0}{1}".format(constants.BASE_URL, "add_record")
-        body = {
-            "user_id": int(self.data[u"user_id"]),
-            "record_length": int(self.data[u"record_length"]),
-            "identifier_id": int(self.data[u"identifier_id"]),
-            "number_of_records": int(self.data[u"number_of_records"]),
-            "record_number": self.processor.counter,
-            "start_record_time": self.get_formatted_time(self.processor.start_time),
-            "end_record_time": self.get_formatted_time(self.processor.end_time),
-            "heart_rate": "{:.2f}".format(np.average(self.processor.heart_rates)),
-            "app_secret": constants.APP_SECRET
-        }
+        is_success, _ = NetworkHelper.add_record(int(self.data[u"user_id"]), int(self.data[u"record_length"]),
+                                 int(self.data[u"identifier_id"]), int(self.data[u"number_of_records"]),
+                                 self.processor.counter, self.get_formatted_time(self.processor.start_time),
+                                 self.get_formatted_time(self.processor.end_time),
+                                 "{:.2f}".format(np.average(self.processor.heart_rates)))
+        if not is_success:
+            return
 
-        try:
-            response = requests.post(url=url, data=body)
+        else:
+            self.avgData.append(int(np.average(self.processor.heart_rates)))
 
-            if response.status_code == constants.STATUS_NO_CONTENT:
-                self.avgData.append(int(np.average(self.processor.heart_rates)))
+            self.processor.is_success = True
 
-                self.processor.is_success = True
+            # if self.processor.counter == self.data[u"number_of_records"]:
+            #    self.showMessageBox("Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
 
-                # if self.processor.counter == self.data[u"number_of_records"]:
-                #    self.showMessageBox("Average heart rate " + "{:.2f}".format(np.average(self.avgData)))
-
-                # simulate "s" key pressed to end recording
-                # pyautogui.press("s")
-                # End recording
-                self.toggle_search()
-
-        except Exception as err:
-            print err.message
+            # simulate "s" key pressed to end recording
+            # pyautogui.press("s")
+            # End recording
+            self.toggle_search()
 
     def get_measurement(self):
         return self.bpm
