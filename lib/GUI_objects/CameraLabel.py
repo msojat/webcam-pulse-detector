@@ -71,6 +71,15 @@ class CameraLabel(QLabel):
     def set_scale_image_down_flag(self, value):
         self.scale_image_down = value
 
+    def start_measuring(self):
+        self.pulse_detector.start_measuring()
+
+    def stop_measuring(self):
+        self.pulse_detector.stop_measuring()
+
+    def get_n_measurements(self, n):
+        return self.pulse_detector.get_n_measurements(n)
+
     def cleanup(self):
         """
         Closes thread and closes pulse detector.

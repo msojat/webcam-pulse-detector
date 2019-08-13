@@ -54,6 +54,7 @@ class MainWindow(QMainWindow):
 
     def measurement_slot(self):
         print("measurement signal caught by measurement_slot in MainWindow")
+        print(self.camera_label.get_n_measurements(255))
 
     def form_cancel_callback(self):
         self.close_program()
@@ -67,8 +68,13 @@ class MainWindow(QMainWindow):
 
         if e.key() == Qt.Key_S:
             # self.camera_label.pulse_detector.toggle_search()
+            self.camera_label.start_measuring()
             # Start displaying images
             self.image_widget.display_images()
+            return
+
+        if e.key() == Qt.Key_A:
+            self.camera_label.stop_measuring()
             return
 
         super(MainWindow, self).keyPressEvent(e)

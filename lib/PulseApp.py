@@ -28,6 +28,9 @@ class PulseApp(QObject):
 
     def __init__(self, args, parent=None):
         super(PulseApp, self).__init__(parent=parent)
+
+        self.bpm_array = []
+
         # Imaging device - must be a connected camera (not an ip camera or mjpeg
         # stream)
         serial = args.serial
@@ -78,6 +81,8 @@ class PulseApp(QObject):
                                           data_spike_limit=2500.,
                                           face_detector_smoothness=10.)
 
+        self.processor.external_data_buffer = self.bpm_array
+
         # Init parameters for the cardiac data plot
         self.bpm_plot = False
         self.plot_title = "Data display - raw signal (top) and PSD (bottom)"
@@ -116,6 +121,19 @@ class PulseApp(QObject):
         # state = self.processor.find_faces.toggle()
         state = self.processor.find_faces_toggle(self.data)
         print "face detection lock =", not state
+
+    def start_measuring(self):
+        self.processor.find_faces = False
+        self.processor.start_time = self.processor.get_current_time()
+        self.processor.end_time = self.data[u"record_length"] + self.processor.start_time
+        self.processor.data = self.data
+        self.processor.heart_rates = []
+
+    def stop_measuring(self):
+        self.processor.find_faces = True
+        if self.processor.is_success:
+            self.processor.counter += 1
+            self.processor.is_success = False
 
     def toggle_display_plot(self):
         """
@@ -178,7 +196,6 @@ class PulseApp(QObject):
         """
         Single iteration of the application's main loop.
         """
-        self.measurement_signal.emit()
         # Get current image frame from the camera
         frame = self.cameras[self.selected_cam].get_frame()
         self.h, self.w, _c = frame.shape
@@ -187,6 +204,10 @@ class PulseApp(QObject):
         self.processor.frame_in = frame
         # process the image frame to perform all needed analysis
         self.processor.run(self.selected_cam)
+
+        if len(self.bpm_array) > 255:
+            self.measurement_signal.emit()
+
         if self.processor.time_gap is not None and self.processor.time_gap <= 0:
             self.upload_measurements()
             self.processor.time_gap = None
@@ -234,6 +255,11 @@ class PulseApp(QObject):
 
         except Exception as err:
             print err.message
+
+    def get_n_measurements(self, n):
+        return_array = self.bpm_array[:n]
+        self.bpm_array = self.bpm_array[n:]
+        return return_array
 
     def setAppData(self, data):
         self.data = data
