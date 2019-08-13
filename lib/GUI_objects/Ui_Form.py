@@ -1,12 +1,9 @@
-import json
-
-import requests
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 from PyQt5.QtWidgets import QWidget, QFormLayout, QHBoxLayout, QVBoxLayout
 
-from constants import constants
+from lib.network.NetworkHelper import NetworkHelper
 
 
 class Ui_Form(QWidget):
@@ -200,32 +197,15 @@ class Ui_Form(QWidget):
             return False
 
     def set_user(self):
-        url = "{0}{1}".format(constants.BASE_URL, "add_user")
-        body = {
-            "name": self.name.text().strip(),
-            "surname": self.surname.text().strip(),
-            "jmbag": self.jmbag.text(),
-            "number_of_records": int(self.record_num.text()),
-            "app_secret": constants.APP_SECRET
-        }
+        is_success, data = NetworkHelper.add_user(self.name.text().strip(), self.surname.text().strip(),
+                                                  self.jmbag.text(), int(self.record_num.text()))
+        if not is_success or data is None:
+            return False
 
-        try:
-            response = requests.post(url=url, data=body)
-
-            if response.status_code == constants.STATUS_OK:
-                # Response contains: identifier_id & user_id
-                self.data = json.loads(response.text)
-
-                self.data[u"record_length"] = int(self.record_length.text())
-                self.data[u"number_of_records"] = int(self.record_num.text())
-                return True
-            else:
-                return False
-
-        except Exception as err:
-            error_msg = "Connection refused" if "Connection refused" in str(err.message) \
-                else str(err.message)
-            self.showMessageBox(error_msg)
+        self.data = data
+        self.data[u"record_length"] = int(self.record_length.text())
+        self.data[u"number_of_records"] = int(self.record_num.text())
+        return True
 
     def get_data(self):
         return self.data

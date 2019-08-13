@@ -132,7 +132,6 @@ class ImageWindow(QWidget):
             self.restart_shown_images()
 
             self.is_running = True
-            print("Starting Image Window thread")
             self.thread_display_images.start()
 
     def cleanup(self):
