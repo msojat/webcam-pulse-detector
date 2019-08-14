@@ -145,7 +145,7 @@ class ImageWindow(QWidget):
 
     def cleanup(self):
         self.is_running = False
-        if self.thread_display_images.is_alive():
+        if self.thread_display_images is not None and self.thread_display_images.is_alive():
             self.thread_display_images.join()
         print("Cleared Image Window")
 

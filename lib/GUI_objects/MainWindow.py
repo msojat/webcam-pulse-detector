@@ -8,9 +8,12 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMainWindow
 from lib.GUI_objects.CameraLabel import CameraLabel
 from lib.GUI_objects.ImageWindow import ImageWindow
 from lib.GUI_objects.Ui_Form import Ui_Form
+from lib.network.NetworkHelper import NetworkHelper
 
 
 class MainWindow(QMainWindow):
+    MEASUREMENTS_COUNT_LIMIT = 50
+
     def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
@@ -38,6 +41,7 @@ class MainWindow(QMainWindow):
         p.setColor(self.foregroundRole(), Qt.white)
         self.setPalette(p)
 
+        self.images = []
         self.bpm_array = []
         self.data = None
 
@@ -64,13 +68,25 @@ class MainWindow(QMainWindow):
                                   "time": NetworkHelper.get_formatted_time(time.time()),
                                   "image": self.image_widget.current_showing_image}
             self.bpm_array.append(single_measurement)
-            if len(self.bpm_array) == 50:
-                if self.data is None:
-                    return
-                records = self.bpm_array[:255]
-                self.bpm_array = self.bpm_array[255:]
-                NetworkHelper.add_record_bulk(self.data[u"user_id"], records)
+            if len(self.bpm_array) == self.MEASUREMENTS_COUNT_LIMIT:
+                self.send_measurements()
 
+    def send_measurements(self):
+        if self.data is None:
+            return
+        records = self.bpm_array[:self.MEASUREMENTS_COUNT_LIMIT]
+        self.bpm_array = self.bpm_array[self.MEASUREMENTS_COUNT_LIMIT:]
+        missing_images = list({bpm['image'] for bpm in records if bpm['image']
+                               not in [image['name'] for image in self.images]})
+        for img in missing_images:
+            success, full_img = NetworkHelper.add_image({'name': img})
+            if success:
+                self.images.append(full_img)
+        # print(self.images)
+        for r in records:
+            r['image'] = [img['id'] for img in self.images if r['image'] == img['name']][0]
+
+        NetworkHelper.add_record_bulk(self.data[u"user_id"], records)
 
     def form_cancel_callback(self):
         self.close_program()
