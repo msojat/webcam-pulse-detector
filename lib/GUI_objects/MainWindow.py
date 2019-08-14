@@ -39,11 +39,12 @@ class MainWindow(QMainWindow):
         self.setPalette(p)
 
         self.bpm_array = []
+        self.data = None
 
     def form_ok_callback(self):
         if self.form_window and self.form_window.check_state(None):
             if self.form_window.set_user():
-                # self.open_camera(self.form_window.get_data())
+                self.data = self.form_window.get_data()
 
                 self.main_widget.layout().removeWidget(self.form_window)
                 self.form_window.hide()
@@ -52,7 +53,7 @@ class MainWindow(QMainWindow):
 
                 self.image_widget.show_relaxing_image()
 
-                self.camera_label.open_camera(self.form_window.get_data())
+                self.camera_label.open_camera(self.data)
                 self.camera_label.measurement_signal.connect(self.measurement_slot)
 
     def measurement_slot(self):
@@ -60,9 +61,16 @@ class MainWindow(QMainWindow):
         #  Send measurements data to server
         if self.image_widget.current_showing_image is not None:
             single_measurement = {"value": self.camera_label.get_measurement(),
-                                  "time": time.time(),
+                                  "time": NetworkHelper.get_formatted_time(time.time()),
                                   "image": self.image_widget.current_showing_image}
-            print(single_measurement)
+            self.bpm_array.append(single_measurement)
+            if len(self.bpm_array) == 50:
+                if self.data is None:
+                    return
+                records = self.bpm_array[:255]
+                self.bpm_array = self.bpm_array[255:]
+                NetworkHelper.add_record_bulk(self.data[u"user_id"], records)
+
 
     def form_cancel_callback(self):
         self.close_program()
@@ -83,6 +91,7 @@ class MainWindow(QMainWindow):
 
         if e.key() == Qt.Key_A:
             self.camera_label.stop_measuring()
+            self.image_widget.stop_displaying_images()
             return
 
         super(MainWindow, self).keyPressEvent(e)

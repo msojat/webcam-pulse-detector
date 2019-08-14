@@ -39,7 +39,7 @@ class ImageWindow(QWidget):
         #################################
         # Init Thread related variables #
         #################################
-        self.thread_display_images = threading.Thread(target=self._display_images)
+        self.thread_display_images = None
         self.is_running = True
         self.shown_images_counter = 0
         # Defined time (in seconds) for image display
@@ -128,11 +128,20 @@ class ImageWindow(QWidget):
         time.sleep(sleep_time)
 
     def display_images(self):
+        if self.thread_display_images is not None:
+            self.stop_displaying_images()
+        self.thread_display_images = threading.Thread(target=self._display_images)
+        self.restart_shown_images()
+        self.is_running = True
         if not self.thread_display_images.is_alive():
-            self.restart_shown_images()
-
-            self.is_running = True
             self.thread_display_images.start()
+
+    def stop_displaying_images(self):
+        self.is_running = False
+        if self.thread_display_images is not None and self.thread_display_images.is_alive():
+            self.thread_display_images.join()
+        self.thread_display_images = None
+        self.restart_shown_images()
 
     def cleanup(self):
         self.is_running = False
@@ -143,3 +152,4 @@ class ImageWindow(QWidget):
     def restart_shown_images(self):
         self.shown_images_counter = 0
         self.shown_images = []
+        self.current_showing_image = None
