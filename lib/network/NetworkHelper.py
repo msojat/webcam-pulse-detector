@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 
@@ -8,6 +9,11 @@ from constants import constants
 class NetworkHelper:
     def __init__(self):
         pass
+
+    @staticmethod
+    def get_formatted_time(time_seconds):
+        FMT = "%Y-%m-%d %H:%M:%S"
+        return time.strftime(FMT, time.gmtime(time_seconds))
 
     @staticmethod
     def add_user(name, surname, jmbag, number_of_records):
@@ -53,6 +59,25 @@ class NetworkHelper:
 
         try:
             response = requests.post(url=url, data=body)
+
+            if response.status_code == constants.STATUS_NO_CONTENT:
+                return True, None
+            return False, None
+
+        except Exception as err:
+            print(err.message)
+            return False, None
+
+    @staticmethod
+    def add_record_bulk(user_id, records):
+        url = "{0}{1}".format(constants.BASE_URL, "add_record/bulk")
+        body = {
+            "user_id": user_id,
+            "records": records,
+            "app_secret": constants.APP_SECRET
+        }
+        try:
+            response = requests.post(url=url, json=body)
 
             if response.status_code == constants.STATUS_NO_CONTENT:
                 return True, None
