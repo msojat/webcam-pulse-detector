@@ -14,12 +14,6 @@ def window():
     ########################
     app = QtWidgets.QApplication(sys.argv)
 
-    # form_window = Ui_Form(form_ok_cllback)
-    # form_window.show()
-
-    # image_window = ImageWindow()
-    # image_window.show()
-
     main_window = MainWindow()
     main_window.show()
 

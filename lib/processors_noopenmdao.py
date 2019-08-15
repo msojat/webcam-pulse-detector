@@ -220,7 +220,7 @@ class findFaceGetPulse(object):
                 # get time gap to data[u"record_length"]
                 self.time_gap = self.end_time - self.get_current_time()
 
-                # TODO: Temp fix, TO decide what to do with it
+                # "Fix" not to show remaining time
                 self.time_gap = 0
 
                 self.heart_rates.append(self.bpm)

@@ -12,8 +12,6 @@ class Ui_Form(QWidget):
 
         self.setObjectName("Form")
         self.resize(485, 364)
-        # self.setStyleSheet("QWidget{ background-color: #ffffff; }")
-
 
         self.errorColor = '#f6989d'
         self.color = '#ffffff'
