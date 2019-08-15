@@ -43,6 +43,7 @@ class CameraLabel(QLabel):
         self.pulse_detector = self._create_pulse_detector()
         self.pulse_detector.setAppData(data)
         self.is_running = True
+
         self.thread_pulse_detector = threading.Thread(target=self.run_pulse_detector)
         self.thread_pulse_detector.start()
 
@@ -58,6 +59,7 @@ class CameraLabel(QLabel):
                 q_pixmap = QPixmap(q_img).scaledToWidth(self.image_width_minimum, Qt.SmoothTransformation)
             else:
                 q_pixmap = QPixmap(q_img).scaledToWidth(self.image_width_normal, Qt.SmoothTransformation)
+
             self.setPixmap(q_pixmap)
 
     def ndarray_to_qimage(self, ndarray):
@@ -69,6 +71,7 @@ class CameraLabel(QLabel):
         self.scale_image_down = value
 
     def start_measuring(self):
+        self.setMinimumSize(QSize(400, 300))
         self.pulse_detector.start_measuring()
 
     def stop_measuring(self):

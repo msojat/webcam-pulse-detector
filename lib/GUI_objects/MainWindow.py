@@ -14,8 +14,8 @@ from lib.network.NetworkHelper import NetworkHelper
 class MainWindow(QMainWindow):
     MEASUREMENTS_COUNT_LIMIT = 50
 
-    def __init__(self, parent=None, Qt_WindowFlags_flags=Qt.Widget):
-        super(MainWindow, self).__init__(parent, Qt_WindowFlags_flags)
+    def __init__(self, parent=None, window_flags=Qt.Widget):
+        super(MainWindow, self).__init__(parent, window_flags)
 
         # Create main widget for MainWindow
         self.main_widget = QWidget()
@@ -55,14 +55,10 @@ class MainWindow(QMainWindow):
                 self.main_widget.layout().addWidget(self.camera_label)
                 self.main_widget.layout().addWidget(self.image_widget)
 
-                self.image_widget.show_relaxing_image()
-
                 self.camera_label.open_camera(self.data)
                 self.camera_label.measurement_signal.connect(self.measurement_slot)
 
     def measurement_slot(self):
-        # TODO: Add Measurement, time and image name/id to list
-        #  Send measurements data to server
         if self.image_widget.current_showing_image is not None:
             single_measurement = {"value": self.camera_label.get_measurement(),
                                   "time": NetworkHelper.get_formatted_time(time.time()),
@@ -103,11 +99,13 @@ class MainWindow(QMainWindow):
             self.camera_label.start_measuring()
             # Start displaying images
             self.image_widget.display_images()
+            self.camera_label.set_scale_image_down_flag(True)
             return
 
         if e.key() == Qt.Key_A:
             self.camera_label.stop_measuring()
             self.image_widget.stop_displaying_images()
+            self.camera_label.set_scale_image_down_flag(False)
             return
 
         super(MainWindow, self).keyPressEvent(e)

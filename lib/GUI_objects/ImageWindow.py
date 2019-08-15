@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 
 class ImageWindow(QWidget):
-    def __init__(self, relaxing_images_dir="images/relaxing", disturbing_images_dir="images/disturbing",
+    def __init__(self, happiness_images_dir="images/happiness", fear_images_dir="images/fear",
                  parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
@@ -27,13 +27,13 @@ class ImageWindow(QWidget):
         p.setColor(self.foregroundRole(), Qt.white)
         self.setPalette(p)
 
-        # Create Image Label (holder)
+        # Create Image Label
         self.image_label = QLabel()
         self.image_label.setObjectName("image_label")
 
+        # Put label in widget (self) using HBox Layout
         self.h_box = QHBoxLayout()
         self.h_box.addWidget(self.image_label)
-
         self.setLayout(self.h_box)
 
         #################################
@@ -50,41 +50,43 @@ class ImageWindow(QWidget):
         #######################################
         # Image Directories related variables #
         #######################################
-        self.relaxing_images_dir = relaxing_images_dir
-        self.disturbing_images_dir = disturbing_images_dir
+        self.happiness_images_dir = happiness_images_dir
+        self.fear_images_dir = fear_images_dir
 
         # Get image names and put them in lists
         try:
-            self.relaxing_images = os.listdir(relaxing_images_dir)
+            self.relaxing_images = os.listdir(happiness_images_dir)
         except WindowsError:
-            sys.exit("Relaxing folder ({0}) doesn't exist".format(relaxing_images_dir))
+            sys.exit("Relaxing folder ({0}) doesn't exist".format(happiness_images_dir))
         try:
-            self.disturbing_images = os.listdir(disturbing_images_dir)
+            self.disturbing_images = os.listdir(fear_images_dir)
         except WindowsError:
-            sys.exit("Disturbing folder ({0}) doesn't exist".format(disturbing_images_dir))
+            sys.exit("Disturbing folder ({0}) doesn't exist".format(fear_images_dir))
 
         self.shown_images = []
         self.current_showing_image = None
 
-    def show_relaxing_image(self):
-        list_of_available_images = [image_name for image_name in self.relaxing_images if image_name not in self.shown_images]
+    def show_happiness_image(self):
+        list_of_available_images = [image_name for image_name in self.relaxing_images
+                                    if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
-            raise FileNotFoundError("Not enough relaxing images in the folder")
+            raise FileNotFoundError("Not enough happiness images in the folder")
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
-        pixmap = QPixmap('{0}/{1}'.format(self.relaxing_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+        pixmap = QPixmap('{0}/{1}'
+                         .format(self.happiness_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
         self.shown_images.append(image_name)
         self.current_showing_image = image_name
 
-    def show_disturbing_image(self):
+    def show_fear_image(self):
         list_of_available_images = [image_name for image_name in self.disturbing_images if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
-            raise FileNotFoundError("Not enough disturbing images in the folder")
+            raise FileNotFoundError("Not enough fear images in the folder")
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'
-                         .format(self.disturbing_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+                         .format(self.fear_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
         self.shown_images.append(image_name)
         self.current_showing_image = image_name
@@ -92,12 +94,12 @@ class ImageWindow(QWidget):
     def _display_images(self):
         # While is_running flag is True, show and hide images
         while self.is_running:
-            # Show 10 relaxing then 10 disturbing images
+            # Show 10 happiness then 10 fear images
             # Every image is shown for self.IMAGE_TIMER (default 30) seconds
             if self.shown_images_counter < 10:
-                self.show_relaxing_image()
+                self.show_happiness_image()
             else:
-                self.show_disturbing_image()
+                self.show_fear_image()
 
             if self.shown_images_counter == 19:
                 self.shown_images_counter = 0
