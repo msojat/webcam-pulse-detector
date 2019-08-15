@@ -70,8 +70,6 @@ class Ui_Form(QWidget):
         self.form_layout.addRow("Name *", self.name)
         self.form_layout.addRow("Surname *", self.surname)
         self.form_layout.addRow("JMBAG *", self.jmbag)
-        self.form_layout.addRow("Number of records *", self.record_num)
-        self.form_layout.addRow("Record length *", self.record_length)
         self.form_layout.addWidget(self.required)
 
         # Create Buttons
