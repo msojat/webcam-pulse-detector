@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
 
                 self.camera_label.open_camera(self.data)
                 self.camera_label.measurement_signal.connect(self.measurement_slot)
+                self.image_widget.done_displaying_images_signal.connect(self.stop_image_display)
 
     def measurement_slot(self):
         if self.image_widget.current_showing_image is not None:
@@ -72,16 +73,20 @@ class MainWindow(QMainWindow):
             return
         records = self.bpm_array[:self.MEASUREMENTS_COUNT_LIMIT]
         self.bpm_array = self.bpm_array[self.MEASUREMENTS_COUNT_LIMIT:]
+        # get image if from database if not already fetched
         missing_images = list({bpm['image'] for bpm in records if bpm['image']
                                not in [image['name'] for image in self.images]})
         for img in missing_images:
             success, full_img = NetworkHelper.add_image({'name': img})
             if success:
                 self.images.append(full_img)
-        # print(self.images)
+        # change all records name with id
         for r in records:
+            img_id = [img['id'] for img in self.images if r['image'] == img['name']]
+            if not img_id:
+                continue
             r['image'] = [img['id'] for img in self.images if r['image'] == img['name']][0]
-
+        # send measurements (records)
         NetworkHelper.add_record_bulk(self.data[u"user_id"], records)
 
     def form_cancel_callback(self):
@@ -103,12 +108,16 @@ class MainWindow(QMainWindow):
             return
 
         if e.key() == Qt.Key_A:
-            self.camera_label.stop_measuring()
-            self.image_widget.stop_displaying_images()
-            self.camera_label.set_scale_image_down_flag(False)
+            self.stop_image_display()
             return
 
         super(MainWindow, self).keyPressEvent(e)
+
+    def stop_image_display(self):
+        self.camera_label.stop_measuring()
+        self.camera_label.set_scale_image_down_flag(False)
+        self.image_widget.stop_displaying_images()
+        self.send_measurements()
 
     def close_program(self):
         print("Exiting")

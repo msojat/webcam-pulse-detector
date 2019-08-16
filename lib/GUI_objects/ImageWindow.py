@@ -5,12 +5,14 @@ import time
 from random import randrange
 
 from PyInstaller.compat import FileNotFoundError
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 
 class ImageWindow(QWidget):
+    done_displaying_images_signal = pyqtSignal()
+
     def __init__(self, happiness_images_dir="images/happiness", fear_images_dir="images/fear",
                  parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
@@ -104,6 +106,8 @@ class ImageWindow(QWidget):
             if self.shown_images_counter == 19:
                 self.shown_images_counter = 0
                 self.is_running = False
+                # send done_displaying_images signal
+                self.done_displaying_images_signal.emit()
             self.shown_images_counter += 1
             self.lazy_sleep(self.IMAGE_TIMER)
 
