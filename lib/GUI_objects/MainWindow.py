@@ -44,23 +44,37 @@ class MainWindow(QMainWindow):
         self.images = []
         self.bpm_array = []
         self.data = None
+        self.session_id = None
 
     def form_ok_callback(self):
         if self.form_window and self.form_window.check_state(None):
             if self.form_window.set_user():
+                ############
+                # Read Data
+                ############
                 self.data = self.form_window.get_data()
 
+                ############
+                # Update UI
+                ############
                 self.main_widget.layout().removeWidget(self.form_window)
                 self.form_window.hide()
                 self.main_widget.layout().addWidget(self.camera_label)
                 self.main_widget.layout().addWidget(self.image_widget)
 
+                ###############
+                # Start camera
+                ###############
                 self.camera_label.open_camera(self.data)
+
+                ###########################
+                # Connect signals to slots
+                ###########################
                 self.camera_label.measurement_signal.connect(self.measurement_slot)
                 self.image_widget.done_displaying_images_signal.connect(self.stop_image_display)
 
     def measurement_slot(self):
-        if self.image_widget.current_showing_image is not None:
+        if self.image_widget.current_showing_image is not None and self.session_id is not None:
             single_measurement = {"value": self.camera_label.get_measurement(),
                                   "time": NetworkHelper.get_formatted_time(time.time()),
                                   "image": self.image_widget.current_showing_image}
@@ -87,7 +101,7 @@ class MainWindow(QMainWindow):
                 continue
             r['image'] = [img['id'] for img in self.images if r['image'] == img['name']][0]
         # send measurements (records)
-        NetworkHelper.add_record_bulk(self.data[u"user_id"], records)
+        NetworkHelper.add_record_bulk(self.session_id, records)
 
     def form_cancel_callback(self):
         self.close_program()
@@ -100,6 +114,18 @@ class MainWindow(QMainWindow):
             self.close_program()
 
         if e.key() == Qt.Key_S:
+            ##############################
+            # Get new measurement session
+            ##############################
+            user_id = self.data[u"user_id"]
+            is_success, self.session_id = NetworkHelper.create_measurement_session(user_id)
+            if not is_success:
+                print("New session request failed.")
+                return
+
+            #############################################
+            # Start image displaying and pulse measuring
+            #############################################
             # self.camera_label.pulse_detector.toggle_search()
             self.camera_label.start_measuring()
             # Start displaying images
