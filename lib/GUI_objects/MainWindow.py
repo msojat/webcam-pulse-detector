@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         NetworkHelper.add_record_bulk(self.session_id, records)
 
     def form_cancel_callback(self):
-        self.close_program()
+        self.close()
 
     def closeEvent(self, event):
         """
@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
         Handling key press
         """
         if e.key() == Qt.Key_Escape:
-            self.close_program()
+            self.close()
 
         if e.key() == Qt.Key_S:
             ##############################
@@ -152,9 +152,3 @@ class MainWindow(QMainWindow):
         self.camera_label.set_scale_image_down_flag(False)
         self.image_widget.stop_displaying_images()
         self.send_measurements()
-
-    def close_program(self):
-        print("Exiting")
-        self.camera_label.cleanup()
-        self.image_widget.cleanup()
-        sys.exit()
