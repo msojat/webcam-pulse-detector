@@ -106,6 +106,14 @@ class MainWindow(QMainWindow):
     def form_cancel_callback(self):
         self.close_program()
 
+    def closeEvent(self, event):
+        """
+        If program is closed by clicking on "X", perform cleanup before closing
+        """
+        self.camera_label.cleanup()
+        self.image_widget.cleanup()
+        event.accept()
+
     def keyPressEvent(self, e):
         """
         Handling key press
