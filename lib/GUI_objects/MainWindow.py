@@ -1,4 +1,3 @@
-import sys
 import time
 
 from PyQt5.QtCore import Qt
@@ -83,11 +82,11 @@ class MainWindow(QMainWindow):
                 self.send_measurements()
 
     def send_measurements(self):
-        if self.data is None:
+        if self.data is None or len(self.bpm_array) == 0:
             return
         records = self.bpm_array[:self.MEASUREMENTS_COUNT_LIMIT]
         self.bpm_array = self.bpm_array[self.MEASUREMENTS_COUNT_LIMIT:]
-        # get image if from database if not already fetched
+        # Get images from database if not already fetched
         missing_images = list({bpm['image'] for bpm in records if bpm['image']
                                not in [image['name'] for image in self.images]})
         for img in missing_images:
