@@ -16,12 +16,15 @@ class Ui_Form(QWidget):
         self.errorColor = '#f6989d'
         self.color = '#ffffff'
 
-        ## Validation Flags ##
+        # Validation Flags ##
         self.isNameValid = False
         self.isSurnameValid = False
         self.isJmbagValid = False
         self.isRecordNumValid = True  # minimal default value is set
         self.isRecordLengthValid = True  # minimal default value is set
+
+        # Flag used for session name field auto generation ##
+        self.session_text_edited_flag = False
 
         # UI Creation and setup
         self.setupUi()
@@ -36,11 +39,13 @@ class Ui_Form(QWidget):
         self.name.setText("")
         self.name.setObjectName("name")
         self.name.setMaxLength(45)
+        self.name.textEdited.connect(self.update_session_name)
 
         self.surname = QtWidgets.QLineEdit()
         self.surname.setText("")
         self.surname.setObjectName("surname")
         self.surname.setMaxLength(45)
+        self.surname.textEdited.connect(self.update_session_name)
 
         self.jmbag = QtWidgets.QLineEdit()
         self.jmbag.setText("")
@@ -58,6 +63,12 @@ class Ui_Form(QWidget):
         self.record_length.setObjectName("record_length")
         self.record_length.setToolTip("Min 1, max 60")
 
+        self.session_name = QtWidgets.QLineEdit()
+        self.session_name.setText("")
+        self.session_name.setObjectName("name")
+        self.session_name.setMaxLength(45)
+        self.session_name.textEdited.connect(self.session_text_edited)
+
         self.required = QtWidgets.QLabel()
         self.required.setObjectName("required")
         self.required.setText("Required *")
@@ -68,6 +79,7 @@ class Ui_Form(QWidget):
         self.form_layout.addRow("Name *", self.name)
         self.form_layout.addRow("Surname *", self.surname)
         self.form_layout.addRow("JMBAG *", self.jmbag)
+        self.form_layout.addRow("Session Name", self.session_name)
         self.form_layout.addWidget(self.required)
 
         # Create Buttons
@@ -114,6 +126,19 @@ class Ui_Form(QWidget):
         self.record_length.textChanged.connect(lambda: self.check_state(self.record_length))
 
         self.setFixedSize(self.size())
+
+    def session_text_edited(self):
+        if not self.session_text_edited_flag:
+            self.session_text_edited_flag = True
+
+    def update_session_name(self, text):
+        if not self.session_text_edited_flag:
+            # Concat name, surname and datetime
+            final_name = ""
+            final_name = final_name + self.name.text()
+            final_name = final_name + "_" + self.surname.text()
+            final_name = final_name + "_" + NetworkHelper.get_formatted_time(None)
+            self.session_name.setText(final_name)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
