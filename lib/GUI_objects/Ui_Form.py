@@ -226,6 +226,7 @@ class Ui_Form(QWidget):
         self.data = data
         self.data[u"record_length"] = int(self.record_length.text())
         self.data[u"number_of_records"] = int(self.record_num.text())
+        self.data[u"session_name"] = self.session_name.text()
         return True
 
     def get_data(self):

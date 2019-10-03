@@ -114,13 +114,13 @@ class NetworkHelper:
             return False, None
 
     @staticmethod
-    def create_measurement_session(user_id):
+    def create_measurement_session(user_id, session_name):
         url = "{0}{1}".format(constants.BASE_URL, "session")
         body = {
             "app_secret": constants.APP_SECRET,
             "user_id": user_id,
-            "start_time": NetworkHelper.get_formatted_time(time.time())
-
+            "start_time": NetworkHelper.get_formatted_time(time.time()),
+            "session_name": session_name
         }
 
         try:

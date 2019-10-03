@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
             # Get new measurement session
             ##############################
             user_id = self.data[u"user_id"]
-            is_success, self.session_id = NetworkHelper.create_measurement_session(user_id)
+            is_success, self.session_id = NetworkHelper.create_measurement_session(user_id, self.data[u"session_name"])
             if not is_success:
                 print("New session request failed.")
                 return
