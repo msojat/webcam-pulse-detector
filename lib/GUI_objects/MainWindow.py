@@ -1,3 +1,4 @@
+import threading
 import time
 
 from PyQt5.QtCore import Qt
@@ -86,21 +87,31 @@ class MainWindow(QMainWindow):
             return
         records = self.bpm_array[:self.MEASUREMENTS_COUNT_LIMIT]
         self.bpm_array = self.bpm_array[self.MEASUREMENTS_COUNT_LIMIT:]
-        # Get images from database if not already fetched
+
+        t = threading.Thread(target=self.__send_measurement, kwargs={'records':records})
+        t.start()
+
+    def __send_measurement(self, records):
+        # Get images from database if not already cached
         missing_images = list({bpm['image'] for bpm in records if bpm['image']
                                not in [image['name'] for image in self.images]})
         for img in missing_images:
-            success, full_img = NetworkHelper.add_image({'name': img})
-            if success:
-                self.images.append(full_img)
-        # change all records name with id
+            self.__get_image(img)
+
+        # replace all records name with id
         for r in records:
             img_id = [img['id'] for img in self.images if r['image'] == img['name']]
             if not img_id:
                 continue
-            r['image'] = [img['id'] for img in self.images if r['image'] == img['name']][0]
+            r['image'] = img_id[0]
+
         # send measurements (records)
         NetworkHelper.add_record_bulk(self.session_id, records)
+
+    def __get_image(self, img):
+        success, full_img = NetworkHelper.add_image({'name': img})
+        if success and full_img['id'] not in [image['id'] for image in self.images]:
+            self.images.append(full_img)
 
     def form_cancel_callback(self):
         self.close()
@@ -111,6 +122,14 @@ class MainWindow(QMainWindow):
         """
         self.camera_label.cleanup()
         self.image_widget.cleanup()
+        
+        main_thread = threading.currentThread()
+        for t in threading.enumerate():
+            if t is main_thread:
+                continue
+            print('joining %s' % t.getName())
+            t.join()
+
         event.accept()
 
     def keyPressEvent(self, e):
