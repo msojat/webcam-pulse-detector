@@ -9,14 +9,6 @@ from constants import constants
 
 
 def window():
-    ########################
-    #     UI Creation      #
-    ########################
-    app = QtWidgets.QApplication(sys.argv)
-
-    main_window = MainWindow()
-    main_window.show()
-
     ################################################################
     # Configuration file creation / reading in HOME(~) directory   #
     ################################################################
@@ -37,6 +29,15 @@ def window():
 
     os.chdir(original_path)
 
+
+    ########################
+    #     UI Creation      #
+    ########################
+    app = QtWidgets.QApplication(sys.argv)
+
+    main_window = MainWindow(config=data)
+    main_window.show()
+
     # Start GUI
     sys.exit(app.exec_())
 
@@ -51,7 +52,9 @@ def create_app_folder(path, delimiter):
     # create file
     if not os.path.exists(constants.CONFIG_JSON_FILE):
         f = open(constants.CONFIG_JSON_FILE, 'w+')
-        json_content = json.loads('{ "http": "http", "host": "localhost", "port": "3000" }')
+        json_content = json.loads('{ "http": "http", "host": "localhost", "port": "3000", '
+                                  '"image_set_1_dir": "images/happiness", "image_set_2_dir": "images/fear", '
+                                  '"image_number":10, "image_time":30, "pause_time":10 }')
         json.dump(json_content, f)
         f.close()
 

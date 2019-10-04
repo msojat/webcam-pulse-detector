@@ -13,8 +13,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 class ImageWindow(QWidget):
     done_displaying_images_signal = pyqtSignal()
 
-    def __init__(self, happiness_images_dir="images/happiness", fear_images_dir="images/fear",
-                 parent=None, Qt_WindowFlags_flags=Qt.Widget):
+    def __init__(self, config=None, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
 
         ###########
@@ -46,24 +45,39 @@ class ImageWindow(QWidget):
         self.shown_images_counter = 0
         # Defined time (in seconds) for image display
         # and for pause between images
-        self.IMAGE_TIMER = 30
-        self.WAITING_TIMER = 10
+        self.image_timer = 30
+        self.waiting_timer = 10
+        self.image_showing_number = 10
+        if config:
+            if config['image_time']:
+                self.image_timer = config['image_time']
+            if config['pause_time']:
+                self.waiting_timer = config['pause_time']
+            if config['image_number']:
+                self.image_showing_number = config['image_number']
 
         #######################################
         # Image Directories related variables #
         #######################################
-        self.happiness_images_dir = happiness_images_dir
-        self.fear_images_dir = fear_images_dir
+        self.happiness_images_dir = "images/happiness"
+        self.fear_images_dir = "images/fear"
+        if config:
+            if config['image_set_1_dir']:
+                self.happiness_images_dir = config['image_set_1_dir']
+            if config['image_set_2_dir']:
+                self.fear_images_dir = config['image_set_2_dir']
+        print(self.happiness_images_dir)
+        print(self.fear_images_dir)
 
         # Get image names and put them in lists
         try:
-            self.relaxing_images = os.listdir(happiness_images_dir)
+            self.relaxing_images = os.listdir(self.happiness_images_dir)
         except WindowsError:
-            sys.exit("Relaxing folder ({0}) doesn't exist".format(happiness_images_dir))
+            sys.exit("Relaxing folder ({0}) doesn't exist".format(self.happiness_images_dir))
         try:
-            self.disturbing_images = os.listdir(fear_images_dir)
+            self.disturbing_images = os.listdir(self.fear_images_dir)
         except WindowsError:
-            sys.exit("Disturbing folder ({0}) doesn't exist".format(fear_images_dir))
+            sys.exit("Disturbing folder ({0}) doesn't exist".format(self.fear_images_dir))
 
         self.shown_images = []
         self.current_showing_image = None
@@ -97,26 +111,26 @@ class ImageWindow(QWidget):
         # While is_running flag is True, show and hide images
         while self.is_running:
             # Show 10 happiness then 10 fear images
-            # Every image is shown for self.IMAGE_TIMER (default 30) seconds
-            if self.shown_images_counter < 10:
+            # Every image is shown for self.image_timer (default 30) seconds
+            if self.shown_images_counter < self.image_showing_number:
                 self.show_happiness_image()
             else:
                 self.show_fear_image()
+            self.lazy_sleep(self.image_timer)
 
-            if self.shown_images_counter == 19:
+            if self.shown_images_counter == (2 * self.image_showing_number) - 1:
                 self.shown_images_counter = 0
                 self.is_running = False
                 # send done_displaying_images signal
                 self.done_displaying_images_signal.emit()
             self.shown_images_counter += 1
-            self.lazy_sleep(self.IMAGE_TIMER)
 
             # After the image is shown for specified duration,
             # clear it from the label and wait for self.WAITING_TIMER (default 10) seconds
             self.findChild(QLabel, "image_label").clear()
             self.current_showing_image = None
 
-            self.lazy_sleep(self.WAITING_TIMER)
+            self.lazy_sleep(self.waiting_timer)
 
     def lazy_sleep(self, sleep_time):
         """

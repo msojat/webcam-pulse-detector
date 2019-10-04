@@ -14,8 +14,10 @@ from lib.network.NetworkHelper import NetworkHelper
 class MainWindow(QMainWindow):
     MEASUREMENTS_COUNT_LIMIT = 50
 
-    def __init__(self, parent=None, window_flags=Qt.Widget):
+    def __init__(self, config=None, parent=None, window_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, window_flags)
+
+        self.config = config
 
         # Create main widget for MainWindow
         self.main_widget = QWidget()
@@ -26,7 +28,7 @@ class MainWindow(QMainWindow):
         # Widget for displaying camera image
         self.camera_label = CameraLabel()
         # Widget for displaying images
-        self.image_widget = ImageWindow()
+        self.image_widget = ImageWindow(config=self.config)
 
         layout = QHBoxLayout()
         layout.addWidget(self.form_window)
@@ -122,7 +124,7 @@ class MainWindow(QMainWindow):
         """
         self.camera_label.cleanup()
         self.image_widget.cleanup()
-        
+
         main_thread = threading.currentThread()
         for t in threading.enumerate():
             if t is main_thread:
