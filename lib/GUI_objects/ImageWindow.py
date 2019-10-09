@@ -11,6 +11,9 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 
 class ImageWindow(QWidget):
+    IMAGE_SET_ONE = 1
+    IMAGE_SET_TWO = 2
+
     done_displaying_images_signal = pyqtSignal()
 
     def __init__(self, config=None, parent=None, Qt_WindowFlags_flags=Qt.Widget):
@@ -66,8 +69,6 @@ class ImageWindow(QWidget):
                 self.happiness_images_dir = config['image_set_1_dir']
             if config['image_set_2_dir']:
                 self.fear_images_dir = config['image_set_2_dir']
-        print(self.happiness_images_dir)
-        print(self.fear_images_dir)
 
         # Get image names and put them in lists
         try:
@@ -82,27 +83,24 @@ class ImageWindow(QWidget):
         self.shown_images = []
         self.current_showing_image = None
 
-    def show_happiness_image(self):
-        list_of_available_images = [image_name for image_name in self.relaxing_images
+
+    def show_image(self, image_set):
+        image_list = []
+        images_dir = None
+        if image_set == self.IMAGE_SET_ONE:
+            image_list = self.relaxing_images
+            images_dir = self.happiness_images_dir
+        if image_set == self.IMAGE_SET_TWO:
+            image_list = self.disturbing_images
+            images_dir = self.fear_images_dir
+
+        list_of_available_images = [image_name for image_name in image_list
                                     if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
-            raise FileNotFoundError("Not enough happiness images in the folder")
+            raise FileNotFoundError("Not enough images in the image set 2 folder")
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
-        pixmap = QPixmap('{0}/{1}'
-                         .format(self.happiness_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
-        self.findChild(QLabel, "image_label").setPixmap(pixmap)
-        self.shown_images.append(image_name)
-        self.current_showing_image = image_name
-
-    def show_fear_image(self):
-        list_of_available_images = [image_name for image_name in self.disturbing_images if image_name not in self.shown_images]
-        if len(list_of_available_images) < 1:
-            raise FileNotFoundError("Not enough fear images in the folder")
-
-        image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
-        pixmap = QPixmap('{0}/{1}'
-                         .format(self.fear_images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
+        pixmap = QPixmap('{0}/{1}'.format(images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
         self.findChild(QLabel, "image_label").setPixmap(pixmap)
         self.shown_images.append(image_name)
         self.current_showing_image = image_name
@@ -112,10 +110,17 @@ class ImageWindow(QWidget):
         while self.is_running:
             # Show 10 happiness then 10 fear images
             # Every image is shown for self.image_timer (default 30) seconds
-            if self.shown_images_counter < self.image_showing_number:
-                self.show_happiness_image()
-            else:
-                self.show_fear_image()
+            try:
+                if self.shown_images_counter < self.image_showing_number:
+                    self.show_image(self.IMAGE_SET_ONE)
+                else:
+                    self.show_image(self.IMAGE_SET_TWO)
+            except FileNotFoundError as e:
+                # TODO: Handle error
+                self.is_running = False
+                self.msg_box.setText(str(e))
+                self.msg_box.exec_()
+                self.close()
             self.lazy_sleep(self.image_timer)
 
             if self.shown_images_counter == (2 * self.image_showing_number) - 1:
