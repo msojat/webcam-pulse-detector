@@ -262,6 +262,11 @@ class PulseApp(QObject):
         return time.strftime(FMT, time.gmtime(time_seconds))
 
     def close(self):
+        try:
+            self.measurement_signal.disconnect()
+        except Exception:
+            print("Signal in PulseApp was not connected.")
+        
         for cam in self.cameras:
             cam.cam.release()
         if self.send_serial:

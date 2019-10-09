@@ -86,6 +86,11 @@ class CameraLabel(QLabel):
 
         !!! Has to be called !!!
         """
+        try:
+            self.measurement_signal.disconnect()
+        except Exception:
+            print("Signal in Camera Label was not connected.")
+
         # Stop loop in Pulse Detector thread
         self.is_running = False
         if self.thread_pulse_detector is not None and self.thread_pulse_detector.is_alive():

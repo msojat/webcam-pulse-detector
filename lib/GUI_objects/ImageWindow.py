@@ -19,6 +19,7 @@ class ImageWindow(QWidget):
     done_displaying_images_signal = pyqtSignal()
     display_image_signal = pyqtSignal(int)
     hide_image_signal = pyqtSignal()
+    error_signal = pyqtSignal(str)
 
     def __init__(self, config=None, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
@@ -181,6 +182,15 @@ class ImageWindow(QWidget):
 
     def cleanup(self):
         self.is_running = False
+
+        try:
+            self.display_image_signal.disconnect()
+            self.hide_image_signal.disconnect()
+            self.done_displaying_images_signal.disconnect()
+            self.error_signal.disconnect()
+        except Exception as e:
+            print("One of signals in ImageWindow wasn't connected.")
+
         if self.thread_display_images is not None and self.thread_display_images.is_alive():
             self.thread_display_images.join()
         print("Cleared Image Window")
