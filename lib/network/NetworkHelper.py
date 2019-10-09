@@ -41,34 +41,6 @@ class NetworkHelper:
             print(error_msg)
             return False, None
 
-    # TODO: Update or delete method
-    @staticmethod
-    def add_record(user_id, record_length, identifier_id, number_of_records, record_number,
-                   start_record_time, end_record_time, heart_rate):
-        url = "{0}{1}".format(constants.BASE_URL, "add_record")
-        body = {
-            "user_id": user_id,
-            "record_length": record_length,
-            "identifier_id": identifier_id,
-            "number_of_records": number_of_records,
-            "record_number": record_number,
-            "start_record_time": start_record_time,
-            "end_record_time": end_record_time,
-            "heart_rate": heart_rate,
-            "app_secret": constants.APP_SECRET
-        }
-
-        try:
-            response = requests.post(url=url, data=body)
-
-            if response.status_code == constants.STATUS_NO_CONTENT:
-                return True, None
-            return False, None
-
-        except Exception as err:
-            print(err.message)
-            return False, None
-
     @staticmethod
     def add_record_bulk(session_id, records):
         url = "{0}{1}".format(constants.BASE_URL, "add_record/bulk")
