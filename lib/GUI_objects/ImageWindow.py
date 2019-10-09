@@ -134,14 +134,13 @@ class ImageWindow(QWidget):
                 self.display_image_signal.emit(self.IMAGE_SET_TWO)
 
             self.lazy_sleep(self.image_timer)
-
-            # TODO: Remove `-1` and move increment before if
-            if self.shown_images_counter == (2 * self.image_showing_number) - 1:
+            
+            self.shown_images_counter += 1
+            if self.shown_images_counter == (2 * self.image_showing_number):
                 self.shown_images_counter = 0
                 self.is_running = False
                 # send done_displaying_images signal
                 self.done_displaying_images_signal.emit()
-            self.shown_images_counter += 1
 
             # After the image is shown for specified duration,
             # clear it from the label and wait for self.WAITING_TIMER (default 10) seconds
