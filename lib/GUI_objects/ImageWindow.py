@@ -7,14 +7,18 @@ from random import randrange
 from PyInstaller.compat import FileNotFoundError
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QMessageBox
 
 
 class ImageWindow(QWidget):
+    MAX_SLEEP_DURATION = 2
+
     IMAGE_SET_ONE = 1
     IMAGE_SET_TWO = 2
 
     done_displaying_images_signal = pyqtSignal()
+    display_image_signal = pyqtSignal(int)
+    hide_image_signal = pyqtSignal()
 
     def __init__(self, config=None, parent=None, Qt_WindowFlags_flags=Qt.Widget):
         super(ImageWindow, self).__init__(parent, Qt_WindowFlags_flags)
@@ -83,21 +87,31 @@ class ImageWindow(QWidget):
         self.shown_images = []
         self.current_showing_image = None
 
+        self.msg_box = QMessageBox()
+
+        self.display_image_signal.connect(self.show_image)
+        self.hide_image_signal.connect(self.hide_image)
 
     def show_image(self, image_set):
         image_list = []
         images_dir = None
+        error_text = "Not enough images in the image set"
         if image_set == self.IMAGE_SET_ONE:
             image_list = self.relaxing_images
             images_dir = self.happiness_images_dir
+            error_text = "Not enough images in the image set 1 folder"
         if image_set == self.IMAGE_SET_TWO:
             image_list = self.disturbing_images
             images_dir = self.fear_images_dir
+            error_text = "Not enough images in the image set 2 folder"
 
         list_of_available_images = [image_name for image_name in image_list
                                     if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
-            raise FileNotFoundError("Not enough images in the image set 2 folder")
+            self.is_running = False
+            self.msg_box.setText(error_text)
+            self.msg_box.exec_()
+            self.close()
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'.format(images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
@@ -105,24 +119,23 @@ class ImageWindow(QWidget):
         self.shown_images.append(image_name)
         self.current_showing_image = image_name
 
+    def hide_image(self):
+        self.findChild(QLabel, "image_label").clear()
+        self.current_showing_image = None
+
     def _display_images(self):
         # While is_running flag is True, show and hide images
         while self.is_running:
             # Show 10 happiness then 10 fear images
             # Every image is shown for self.image_timer (default 30) seconds
-            try:
-                if self.shown_images_counter < self.image_showing_number:
-                    self.show_image(self.IMAGE_SET_ONE)
-                else:
-                    self.show_image(self.IMAGE_SET_TWO)
-            except FileNotFoundError as e:
-                # TODO: Handle error
-                self.is_running = False
-                self.msg_box.setText(str(e))
-                self.msg_box.exec_()
-                self.close()
+            if self.shown_images_counter < self.image_showing_number:
+                self.display_image_signal.emit(self.IMAGE_SET_ONE)
+            else:
+                self.display_image_signal.emit(self.IMAGE_SET_TWO)
+
             self.lazy_sleep(self.image_timer)
 
+            # TODO: Remove `-1` and move increment before if
             if self.shown_images_counter == (2 * self.image_showing_number) - 1:
                 self.shown_images_counter = 0
                 self.is_running = False
@@ -132,9 +145,7 @@ class ImageWindow(QWidget):
 
             # After the image is shown for specified duration,
             # clear it from the label and wait for self.WAITING_TIMER (default 10) seconds
-            self.findChild(QLabel, "image_label").clear()
-            self.current_showing_image = None
-
+            self.hide_image_signal.emit()
             self.lazy_sleep(self.waiting_timer)
 
     def lazy_sleep(self, sleep_time):
@@ -142,12 +153,11 @@ class ImageWindow(QWidget):
         Function used to break sleep in segments of maximum 2s.
         Used to gracefully close application.
         """
-        MAX_SLEEP_DURATION = 2
-        while sleep_time > MAX_SLEEP_DURATION:
+        while sleep_time > self.MAX_SLEEP_DURATION:
             if not self.is_running:
                 return
-            time.sleep(MAX_SLEEP_DURATION)
-            sleep_time = sleep_time - MAX_SLEEP_DURATION
+            time.sleep(self.MAX_SLEEP_DURATION)
+            sleep_time = sleep_time - self.MAX_SLEEP_DURATION
         if not self.is_running:
             return
         time.sleep(sleep_time)
@@ -155,7 +165,9 @@ class ImageWindow(QWidget):
     def display_images(self):
         if self.thread_display_images is not None:
             self.stop_displaying_images()
+
         self.thread_display_images = threading.Thread(target=self._display_images)
+
         self.restart_shown_images()
         self.is_running = True
         if not self.thread_display_images.is_alive():
