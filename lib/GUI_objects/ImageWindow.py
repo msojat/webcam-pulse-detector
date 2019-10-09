@@ -115,12 +115,12 @@ class ImageWindow(QWidget):
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'.format(images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
-        self.findChild(QLabel, "image_label").setPixmap(pixmap)
+        self.image_label.setPixmap(pixmap)
         self.shown_images.append(image_name)
         self.current_showing_image = image_name
 
     def hide_image(self):
-        self.findChild(QLabel, "image_label").clear()
+        self.image_label.clear()
         self.current_showing_image = None
 
     def _display_images(self):
