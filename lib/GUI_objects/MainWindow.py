@@ -3,7 +3,7 @@ import time
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMainWindow
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMainWindow, QMessageBox
 
 from lib.GUI_objects.CameraLabel import CameraLabel
 from lib.GUI_objects.ImageWindow import ImageWindow
@@ -29,6 +29,7 @@ class MainWindow(QMainWindow):
         self.camera_label = CameraLabel()
         # Widget for displaying images
         self.image_widget = ImageWindow(config=self.config)
+        self.image_widget.error_signal.connect(self.handle_not_enough_images)
 
         layout = QHBoxLayout()
         layout.addWidget(self.form_window)
@@ -118,10 +119,18 @@ class MainWindow(QMainWindow):
     def form_cancel_callback(self):
         self.close()
 
+    def handle_not_enough_images(self, error_text):
+        self.stop_image_display()
+        msg_box = QMessageBox()
+        msg_box.setText(error_text)
+        msg_box.exec_()
+        self.close()
+
     def closeEvent(self, event):
         """
         If program is closed by clicking on "X", perform cleanup before closing
         """
+
         self.camera_label.cleanup()
         self.image_widget.cleanup()
 

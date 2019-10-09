@@ -4,10 +4,9 @@ import threading
 import time
 from random import randrange
 
-from PyInstaller.compat import FileNotFoundError
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QMessageBox
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 
 
 class ImageWindow(QWidget):
@@ -88,8 +87,6 @@ class ImageWindow(QWidget):
         self.shown_images = []
         self.current_showing_image = None
 
-        self.msg_box = QMessageBox()
-
         self.display_image_signal.connect(self.show_image)
         self.hide_image_signal.connect(self.hide_image)
 
@@ -109,10 +106,8 @@ class ImageWindow(QWidget):
         list_of_available_images = [image_name for image_name in image_list
                                     if image_name not in self.shown_images]
         if len(list_of_available_images) < 1:
-            self.is_running = False
-            self.msg_box.setText(error_text)
-            self.msg_box.exec_()
-            self.close()
+            self.handle_not_enough_images(error_text)
+            return
 
         image_name = list_of_available_images[randrange(0, len(list_of_available_images))]
         pixmap = QPixmap('{0}/{1}'.format(images_dir, image_name)).scaled(QSize(800, 700), Qt.KeepAspectRatio)
@@ -123,6 +118,11 @@ class ImageWindow(QWidget):
     def hide_image(self):
         self.image_label.clear()
         self.current_showing_image = None
+
+    def handle_not_enough_images(self, error_text):
+        self.is_running = False
+        self.stop_displaying_images()
+        self.error_signal.emit(error_text)
 
     def _display_images(self):
         # While is_running flag is True, show and hide images
@@ -135,7 +135,7 @@ class ImageWindow(QWidget):
                 self.display_image_signal.emit(self.IMAGE_SET_TWO)
 
             self.lazy_sleep(self.image_timer)
-            
+
             self.shown_images_counter += 1
             if self.shown_images_counter == (2 * self.image_showing_number):
                 self.shown_images_counter = 0
