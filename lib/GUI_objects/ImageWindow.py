@@ -121,7 +121,6 @@ class ImageWindow(QWidget):
 
     def handle_not_enough_images(self, error_text):
         self.is_running = False
-        self.stop_displaying_images()
         self.error_signal.emit(error_text)
 
     def _display_images(self):

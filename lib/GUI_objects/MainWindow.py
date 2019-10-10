@@ -2,7 +2,7 @@ import threading
 import time
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QMainWindow, QMessageBox
 
 from lib.GUI_objects.CameraLabel import CameraLabel
@@ -16,6 +16,9 @@ class MainWindow(QMainWindow):
 
     def __init__(self, config=None, parent=None, window_flags=Qt.Widget):
         super(MainWindow, self).__init__(parent, window_flags)
+
+        self.setWindowTitle("Pulse meter")
+        self.setWindowIcon(QIcon("images/icon.svg"))
 
         self.config = config
 
@@ -122,6 +125,8 @@ class MainWindow(QMainWindow):
     def handle_not_enough_images(self, error_text):
         self.stop_image_display()
         msg_box = QMessageBox()
+        msg_box.setWindowTitle("Pulse meter - Error")
+        msg_box.setWindowIcon(QIcon("images/icon.svg"))
         msg_box.setText(error_text)
         msg_box.exec_()
         self.close()
