@@ -1,7 +1,7 @@
 import argparse
 import threading
 
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtWidgets import QLabel
 
@@ -9,6 +9,9 @@ from lib.PulseApp import PulseApp
 
 
 class CameraLabel(QLabel):
+
+    display_camera_signal = pyqtSignal(QPixmap)
+
     def __init__(self, parent=None):
         super(CameraLabel, self).__init__(parent=parent)
 
@@ -22,7 +25,9 @@ class CameraLabel(QLabel):
         self.image_width_minimum = 400
         self.image_width_normal = 640
 
-    def _create_pulse_detector(self):
+        self.display_camera_signal.connect(self.display_camera_image)
+
+    def _create_pulse_detector(self, data):
         parser = argparse.ArgumentParser(description='Webcam pulse detector.')
         parser.add_argument('--serial', default=None,
                             help='serial port destination for bpm data')
@@ -34,14 +39,14 @@ class CameraLabel(QLabel):
         args = parser.parse_args()
         if self.pulse_detector is None:
             pulse_detector = PulseApp(args)
+            pulse_detector.setAppData(data)
             self.measurement_signal = pulse_detector.measurement_signal
             return pulse_detector
         else:
             return self.pulse_detector
 
     def open_camera(self, data):
-        self.pulse_detector = self._create_pulse_detector()
-        self.pulse_detector.setAppData(data)
+        self.pulse_detector = self._create_pulse_detector(data)
         self.is_running = True
 
         self.thread_pulse_detector = threading.Thread(target=self.run_pulse_detector)
@@ -59,8 +64,11 @@ class CameraLabel(QLabel):
                 q_pixmap = QPixmap(q_img).scaledToWidth(self.image_width_minimum, Qt.SmoothTransformation)
             else:
                 q_pixmap = QPixmap(q_img).scaledToWidth(self.image_width_normal, Qt.SmoothTransformation)
+            # Send signal to UI thread to display the image
+            self.display_camera_signal.emit(q_pixmap)
 
-            self.setPixmap(q_pixmap)
+    def display_camera_image(self, q_pixmap):
+        self.setPixmap(q_pixmap)
 
     def ndarray_to_qimage(self, ndarray):
         height, width, channel = ndarray.shape
@@ -82,12 +90,10 @@ class CameraLabel(QLabel):
 
     def cleanup(self):
         """
-        Closes thread and closes pulse detector.
-
-        !!! Has to be called !!!
+        Joins thread and closes pulse detector.
         """
         try:
-            self.measurement_signal.disconnect()
+            self.display_camera_signal.disconnect()
         except Exception:
             print("Signal in Camera Label was not connected.")
 
