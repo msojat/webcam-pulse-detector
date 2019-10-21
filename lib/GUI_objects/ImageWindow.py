@@ -66,8 +66,8 @@ class ImageWindow(QWidget):
         #######################################
         # Image Directories related variables #
         #######################################
-        self.happiness_images_dir = "images/happiness"
-        self.fear_images_dir = "images/fear"
+        self.happiness_images_dir = "images/image_set_1"
+        self.fear_images_dir = "images/image_set_2"
         if config:
             if config['image_set_1_dir']:
                 self.happiness_images_dir = config['image_set_1_dir']
@@ -126,7 +126,7 @@ class ImageWindow(QWidget):
     def _display_images(self):
         # While is_running flag is True, show and hide images
         while self.is_running:
-            # Show 10 happiness then 10 fear images
+            # Show 10 images from image_set_1 then 10 images from image_set_2
             # Every image is shown for self.image_timer (default 30) seconds
             if self.shown_images_counter < self.image_showing_number:
                 self.display_image_signal.emit(self.IMAGE_SET_ONE)

@@ -53,7 +53,7 @@ def create_app_folder(path, delimiter):
     if not os.path.exists(constants.CONFIG_JSON_FILE):
         f = open(constants.CONFIG_JSON_FILE, 'w+')
         json_content = json.loads('{ "http": "http", "host": "localhost", "port": "3000", '
-                                  '"image_set_1_dir": "images/happiness", "image_set_2_dir": "images/fear", '
+                                  '"image_set_1_dir": "images/image_set_1", "image_set_2_dir": "images/image_set_2", '
                                   '"image_number":10, "image_time":30, "pause_time":10 }')
         json.dump(json_content, f)
         f.close()
