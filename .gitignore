@@ -54,4 +54,5 @@ dist/
 Icon?
 ehthumbs.db
 Thumbs.db
-images/
+images/*
+!images/icon.svg
